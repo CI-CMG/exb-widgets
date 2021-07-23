@@ -21,6 +21,7 @@ import {React, Immutable, DataSourceManager} from 'jimu-core';
 import {AllWidgetSettingProps} from 'jimu-for-builder';
 import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
 import {ArcGISDataSourceTypes} from 'jimu-arcgis';
+import { TextInput } from 'jimu-ui';
 // import { IMConfig } from "../config";
 
 export default function (props: AllWidgetSettingProps<{}>) {
@@ -35,6 +36,8 @@ export default function (props: AllWidgetSettingProps<{}>) {
   return (
       <div className="sample-use-map-view-setting p-2">
       <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
+      
+      <TextInput placeholder="Enter the service URL..." defaultValue=""/>
     </div>
   )
 }

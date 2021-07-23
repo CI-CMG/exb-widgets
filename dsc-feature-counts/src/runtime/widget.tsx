@@ -226,7 +226,7 @@ export default function (props: AllWidgetProps<{}>) {
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
       <div>Number of Samples: {sampleCount}</div>
       <br/>
-      <div>
+      <div style={{overflowY: 'auto', height: '100%'}}>
         <table>
           <thead><th>Name</th><th>Count</th></thead>
           <tbody>
