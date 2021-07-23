@@ -4,7 +4,7 @@
   "type": "widget",
   "dependency": "jimu-arcgis",
   "version": "1.0.0",
-  "exbVersion": "1.4.0",
+  "exbVersion": "1.5.0",
   "author": "John Cartwright",
   "description": "Displays sample counts within the current map extent",
   "copyright": "",
