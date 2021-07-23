@@ -9,7 +9,6 @@ Some of the underlying code is taken from the [showextent](https://github.com/Es
 
 ## TODO
 
-* panel should scroll when table overflows window
 * provide choices for grouped counts, e.g. taxon, dataset, etc.
 * set map/feature service URL in settings panel
 * option to calculate stats client-side (from featurelayer) or server-side
