@@ -46,7 +46,6 @@ export default function (props: AllWidgetSettingProps<IMConfig>) {
   };
 
   const onMapWidgetSelected = (useMapWidgetIds: string[]) => {
-    console.log(`mapview selected: ${props.id}, ${useMapWidgetIds}`)
     props.onSettingChange({
       id: props.id,
       useMapWidgetIds: useMapWidgetIds
