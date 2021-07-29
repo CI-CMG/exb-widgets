@@ -1,7 +1,11 @@
 /** @jsx jsx */
+/// <reference path="/Users/jcc/Applications/ArcGISExperienceBuilder/client/types/arcgis-js-api.d.ts" />
+/// <reference path="/Users/jcc/Applications/ArcGISExperienceBuilder/client/jimu-core/index.d.ts" />
+
 import { AllWidgetProps, jsx } from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
+import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
 import * as Extent from "esri/geometry/Extent";
 
 
@@ -12,9 +16,12 @@ export default function (props: AllWidgetProps<{}>) {
   const [isStationary, setIsStationary] = useState(true)
   const [sampleCount, setSampleCount] = useState('')
   const [stats, setStats] = useState([])
+  const [summaryField, setSummaryField] = useState('VERNACULARNAMECATEGORY')
+  const [isProcessing, setIsProcessing] = useState(true)
   let stationaryWatch
   let extentWatch
   const featureServiceUrl = 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/Deep Sea Corals Feature Layer/FeatureServer/0/query'
+  const mapServiceUrl = 'https://gis.ngdc.noaa.gov/arcgis/rest/services/DSCRTP/MapServer/0/query?'
 
 
   async function countSamples(extent:Extent) {
@@ -66,6 +73,37 @@ export default function (props: AllWidgetProps<{}>) {
     // sort by count, descending
     stats.sort((a, b) => b[1] - a[1])
     setStats(stats)
+    setIsProcessing(false)
+  }
+
+
+  async function statisticsByScientificName(extent:Extent, fieldname='SCIENTIFICNAME') {  
+    const outStatistics = `[{"statisticType":"count","onStatisticField":"OBJECTID","outStatisticFieldName":"Count"}]`
+    const searchParams = new URLSearchParams([
+      ['where', '1=1'],
+      ['geometry', JSON.stringify(extent)],
+      // ['geometry', '{"spatialReference":{"latestWkid":3857,"wkid":102100},"xmin":-9537248.222581755,"ymin":2411063.266354613,"xmax":-7382335.5211666385,"ymax":3487296.624609608}'],
+      ['geometryType', 'esriGeometryEnvelope'],
+      ['spatialRel', 'esriSpatialRelIntersects'],
+      ['returnGeometry', 'false'],
+      ['groupByFieldsForStatistics', fieldname],
+      ['outStatistics', outStatistics],
+      ['f', 'json']
+    ])
+    const response = await fetch(featureServiceUrl, {
+        method: 'POST',
+        body: searchParams
+    });
+    if (!response.ok) {
+        console.warn("Error fetching data from: " + featureServiceUrl)
+        return
+    }
+    const json = await response.json();
+    const stats = json.features.map(item => [item.attributes.SCIENTIFICNAME, item.attributes.Count])
+    // sort by count, descending
+    stats.sort((a, b) => b[1] - a[1])
+    setStats(stats)
+    setIsProcessing(false)
   }
 
 
@@ -81,19 +119,27 @@ export default function (props: AllWidgetProps<{}>) {
       ['outStatistics', outStatistics],
       ['f', 'json']
     ])
-    const response = await fetch(featureServiceUrl, {
+    // MapService contains TAXON fields but hosted Feature Layer does not
+    const response = await fetch(mapServiceUrl, {
         method: 'POST',
         body: searchParams
     });
     if (!response.ok) {
-        console.warn("Error fetching data from: " + featureServiceUrl)
+        console.warn("Error fetching data from: " + mapServiceUrl)
         return
     }
     const json = await response.json();
-    const stats = json.features.map(item => [item.attributes.TAXONPHYLUM, item.attributes.TAXONORDER, item.attributes.TAXONFAMILY, item.attributes.Count])
+    const stats = json.features.map(item => [
+      [ item.attributes.TAXONPHYLUM, 
+        item.attributes.TAXONORDER=='NA'?'':item.attributes.TAXONORDER, 
+        item.attributes.TAXONFAMILY=='NA'?'':item.attributes.TAXONFAMILY
+      ].join(' '), 
+      item.attributes.Count
+    ])
     // sort by count, descending
     stats.sort((a, b) => b[3] - a[3])
     setStats(stats)
+    setIsProcessing(false)
   }
 
   // fires only once, when widget initially opened
@@ -114,6 +160,8 @@ export default function (props: AllWidgetProps<{}>) {
   }, [])
 
 
+  // TODO could separate out total sample count into a separate useEffect 
+  // block since it doesn't need to update with radio button change
   useEffect(() => {
     if (!extent) {
       // no need to proceed w/o extent
@@ -127,10 +175,17 @@ export default function (props: AllWidgetProps<{}>) {
     // erase previously displayed data while counts are being made
     setSampleCount('updating...')
     setStats([])
+    setIsProcessing(true)
 
     countSamples(extent)
-    sampleStatistics(extent)
-  }, [extent, isStationary])
+    if (summaryField == 'VERNACULARNAMECATEGORY') {
+      sampleStatistics(extent)
+    } else if (summaryField == 'TAXON') {
+      statisticsByTaxon(extent)
+    } else if (summaryField == 'SCIENTIFICNAME') {
+      statisticsByScientificName(extent)
+    }
+  }, [extent, isStationary, summaryField])
 
 
   // only called when widget first opened
@@ -165,15 +220,39 @@ export default function (props: AllWidgetProps<{}>) {
   };
 
 
+  function onRadioButtonChange(e) {
+    setSummaryField(e.target.value)
+  }
+
+
   return (
     <div className="widget-use-map-view" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
       <JimuMapViewComponent 
         useMapWidgetId={props.useMapWidgetIds?.[0]} 
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
-      <div>Number of Samples: {sampleCount}</div>
+      <div style={{paddingLeft: '5px'}}>Number of Samples: {sampleCount}</div>
       <br/>
-      <div style={{overflowY: 'auto', height: '100%'}}>
-        <table>
+      <div style={{paddingLeft: '5px'}}>
+          <Label style={{ cursor: 'pointer' }}>
+            <Radio
+              style={{ cursor: 'pointer' }} value='VERNACULARNAMECATEGORY' checked={summaryField === 'VERNACULARNAMECATEGORY'} onChange={onRadioButtonChange}
+            /> Category
+          </Label>
+          <Label style={{ cursor: 'pointer', paddingLeft: '20px' }}>
+            <Radio
+              style={{ cursor: 'pointer' }} value='SCIENTIFICNAME' checked={summaryField === 'SCIENTIFICNAME'} onChange={onRadioButtonChange}
+            /> Scientific Name
+          </Label>
+          <Label style={{ cursor: 'pointer', paddingLeft: '20px' }}>
+            <Radio
+              style={{ cursor: 'pointer' }} value='TAXON' checked={summaryField === 'TAXON'} onChange={onRadioButtonChange}
+            /> Taxon
+          </Label>
+
+      </div>
+      <div style={{overflowY: 'auto', height: '100%', paddingLeft: '5px'}}>
+        <span style={{display: (isProcessing? 'inline': 'none')}}>processing...</span>
+        <table style={{visibility: (isProcessing? 'hidden': 'visible')}}>
           <thead><th>Name</th><th>Count</th></thead>
           <tbody>
             {stats.map(row => <tr key={row[0]}><td>{row[0]}</td><td>{row[1]}</td></tr>)}
