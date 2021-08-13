@@ -1,0 +1,18 @@
+{
+  "name": "receive-message",
+  "type": "widget",
+  "version": "1.0.0",
+  "exbVersion": "1.5.0",
+  "author": "John Cartwright",
+  "description": "trivial example of messaging between widgets using shared state",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 200,
+    "height": 200
+  }
+}
