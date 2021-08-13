@@ -6,30 +6,28 @@ interface ExtraProps{
   myMessage: String
 }
 
-export default class Widget extends React.PureComponent<AllWidgetProps<IMConfig> & ExtraProps, State>{
-  props: any;
-
-  static mapExtraStateProps = (state: IMState, ownProps: AllWidgetProps<IMConfig>): ExtraProps => {
-    let wId: string;
-    for (const [key, value] of Object.entries(state.widgetsState)) {
-      // console.log(`widget ${key}: ` , value)
-      if(value['myMessage']){
-        wId = key;
-      }
-    }
-    return {
-      myMessage: state.widgetsState[wId]?.myMessage
-    }
-  }
+export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   
-
-  render() {
-    return (
+  return (
       <div>
         Message received via shared widget state:
-      {this.props.myMessage}
+      {props.myMessage}
       </div>
-    )
+  )
+}
+
+
+// this runs a lot, even when widget is not re-rendered
+Widget.mapExtraStateProps = (state: IMState, ownProps: AllWidgetProps<IMConfig>): ExtraProps => {
+  let wId: string;
+  for (const [key, value] of Object.entries(state.widgetsState)) {
+    // console.log(`widget ${key}: ` , value)
+    if(value['myMessage']){
+      wId = key;
+    }
+  }
+  return {
+    myMessage: state.widgetsState[wId]?.myMessage
   }
 }
 
