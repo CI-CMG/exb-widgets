@@ -10,9 +10,7 @@ import {
 } from 'jimu-core'
 import { TextArea, Button, Icon, Tooltip } from 'jimu-ui';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
-// import Extent from "@arcgis/core/geometry/Extent"
 import Extent from "esri/geometry/Extent"
-// import * as webMercatorUtils from "@arcgis/core/geometry/support/webMercatorUtils"
 import * as webMercatorUtils from "esri/geometry/support/webMercatorUtils"
 import defaultMessages from './translations/default'
 // import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui'
@@ -171,7 +169,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       }
       <div>
         {/* <TextArea style={{width:"85%"}} readOnly="true" value={erddapUrl} /> */}
-        <textarea value={erddapUrl} style={{ width: "85%", overflowY:"scroll" }} readOnly="true"/>
+        <textarea value={erddapUrl} style={{ width: "85%", height: "250px", overflowY:"scroll" }} readOnly={true}/>
         <Tooltip placement="top" title="Copy URL to clipboard">
           <Button aria-label="Button" icon onClick={copyUrlBtn} style={{marginLeft:"10px", marginBottom:"35px"}}>
             <Icon icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 32 32&quot;><path d=&quot;M18 14h10.667a2 2 0 110 4H18v10.667a2 2 0 11-4 0V18H3.333a2 2 0 110-4H14V3.333a2 2 0 114 0V14z&quot;></path></svg>" />
