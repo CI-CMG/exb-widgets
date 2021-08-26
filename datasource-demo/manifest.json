@@ -1,0 +1,19 @@
+{
+  "name": "datasource-demo",
+  "type": "widget",
+  "version": "1.5.0",
+  "exbVersion": "1.5.0",
+  "author": "David Martinez",
+  "description": "DevSummit 2021 Demo theater",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "translatedLocales": [
+    "en",
+    "es"
+  ],
+  "defaultSize": {
+    "width": 800,
+    "height": 500
+  }
+}
