@@ -1,5 +1,5 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx, IMState, React, State } from 'jimu-core';
+import { AllWidgetProps, jsx, IMState, React, State, utils } from 'jimu-core';
 import { IMConfig } from '../config';
 
 interface ExtraProps{
@@ -7,7 +7,10 @@ interface ExtraProps{
 }
 
 export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
-  
+  console.log('re-rendering...')
+
+  console.log('myMessage: ', props.myMessage)
+
   return (
       <div>
         Message received via shared widget state:
