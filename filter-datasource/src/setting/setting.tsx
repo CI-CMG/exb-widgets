@@ -454,7 +454,6 @@ export default class Setting extends React.PureComponent<AllWidgetSettingProps<W
     const { config } = this.props
     const isEditingState = config.filterItems.length === this.index && this.state.showFilterItemPanel
     const hasItems = config.filterItems.length > 0 || isEditingState
-    console.log('DataSources: ', this.props.useDataSources)
     return (
       <div css={getStyleForWidget(this.props.theme)}>
         <div className='jimu-widget-setting widget-setting-filter'>

@@ -56,6 +56,8 @@ export default class Widget extends React.PureComponent<AllWidgetProps<WidgetCon
   componentWillUnmount () {
     this.__unmount = true
     Object.keys(this.state.dataSources).map(dsId => {
+      // added to OOTB widget to share state via the Redux Store. removes any filter criteria
+      this.props.dispatch(appActions.widgetStatePropChange(this.props.id, 'sqlString', "1=1"));
       (this.state.dataSources[dsId] as QueriableDataSource)?.updateQueryParams(null, this.props.id)
     })
   }
@@ -95,7 +97,6 @@ export default class Widget extends React.PureComponent<AllWidgetProps<WidgetCon
   }
 
   onFilterItemChange = (index: number, dataSource: DataSource, sqlExprObj: IMSqlExpression, applied: boolean) => {
-    console.log('inside onFilterItemChange...')
     if (this.__unmount) {
       return
     }
@@ -122,6 +123,7 @@ export default class Widget extends React.PureComponent<AllWidgetProps<WidgetCon
   }
 
   setSqlToDs = (dataSource: DataSource, sql: string) => {
+    // added to OOTB widget to share state via the Redux Store
     this.props.dispatch(appActions.widgetStatePropChange(this.props.id, 'sqlString', sql));
     (dataSource as QueriableDataSource)?.updateQueryParams?.({ where: sql } as any, this.props.id)
   }
