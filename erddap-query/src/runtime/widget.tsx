@@ -101,7 +101,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       return
     }
     const stdFields = 'ShallowFlag,DatasetID,CatalogNumber,SampleID,ImageURL,Repository,ScientificName,VernacularNameCategory,TaxonRank,IdentificationQualifier,Locality,Latitude,Longitude,DepthInMeters,DepthMethod,ObservationDate,SurveyID,Station,EventID,SamplingEquipment,LocationAccuracy,RecordType,DataProvider'
-    let url = `${props.config.erddapBaseUrl}.html?${stdFields}&latitude>=${extent.ymin.toFixed(4)}&latitude<=${extent.ymax.toFixed(4)}&longitude>=${extent.xmin.toFixed(4)}&longitude<=${extent.xmax.toFixed(4)}`
+    let url = `${props.config.erddapBaseUrl}.html?${stdFields}&Latitude>=${extent.ymin.toFixed(4)}&Latitude<=${extent.ymax.toFixed(4)}&Longitude>=${extent.xmin.toFixed(4)}&Longitude<=${extent.xmax.toFixed(4)}`
     if (props.sqlString) {
       // console.log(props.sqlString)
       url += '&' + convertSqlToErddapParams(props.sqlString)
@@ -111,15 +111,21 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
 
   function convertSqlToErddapParams(sql:string) {
+    console.log(sql)
     const params = []
-    const regex = /[()]{2,}/g
+    const regex = /[()]/g
     const fields = sql.replace(regex, '').split(' AND ').map(s => s.match(/\S+/g))
+    console.log(fields)
+    console.log(fields.filter(i => i[0] == 'DEPTHINMETERS'))
     let item
 
     // if ShallowFlag and Depth range specified, ShallowFlag takes precedence
     if (fields.filter(i => i[0] == 'DEPTHINMETERS').length == 3) {
       params.push('ShallowFlag=1')
     } else {
+      // WARNING: bug exists if Shallow filter and only 1 depth specified. No 
+      // way to tell if min/max depths specified or combination of Shallow and 
+      // one depth value
       fields.filter(i => i[0] == 'DEPTHINMETERS').forEach(i => {
         params.push(`DepthInMeters${i[1]}${i[2]}`)
       })
