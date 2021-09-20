@@ -100,8 +100,8 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     if (! extent) {
       return
     }
-    const stdFields = 'ShallowFlag,DatasetID,CatalogNumber,SampleID,ImageURL,Repository,ScientificName,VernacularNameCategory,TaxonRank,IdentificationQualifier,Locality,Latitude,Longitude,DepthInMeters,DepthMethod,ObservationDate,SurveyID,Station,EventID,SamplingEquipment,LocationAccuracy,RecordType,DataProvider'
-    let url = `${props.config.erddapBaseUrl}.html?${stdFields}&Latitude>=${extent.ymin.toFixed(4)}&Latitude<=${extent.ymax.toFixed(4)}&Longitude>=${extent.xmin.toFixed(4)}&Longitude<=${extent.xmax.toFixed(4)}`
+    const stdFields = 'ShallowFlag,DatasetID,CatalogNumber,SampleID,ImageURL,Repository,ScientificName,VernacularNameCategory,TaxonRank,IdentificationQualifier,Locality,latitude,longitude,DepthInMeters,DepthMethod,ObservationDate,SurveyID,Station,EventID,SamplingEquipment,LocationAccuracy,RecordType,DataProvider'
+    let url = `${props.config.erddapBaseUrl}.html?${stdFields}&latitude>=${extent.ymin.toFixed(4)}&latitude<=${extent.ymax.toFixed(4)}&longitude>=${extent.xmin.toFixed(4)}&longitude<=${extent.xmax.toFixed(4)}`
     if (props.sqlString) {
       // console.log(props.sqlString)
       url += '&' + convertSqlToErddapParams(props.sqlString)
@@ -138,7 +138,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     }
 
     if (fields.some(i => i[0] == 'IMAGEURL')) {
-      params.push(`ImageURL!='NA'`)
+      params.push(`ImageURL!="NA"`)
     }
 
     item = fields.find(i => i[0] == 'SCIENTIFICNAME')
@@ -183,10 +183,15 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         </Tooltip>
       </div>
       <div style={{display:"flex", justifyContent: "center", alignItems: "center"}}>
-      <Button type="primary" tag="a" href={erddapUrl} target="_blank" >Open</Button>
+        <Tooltip placement="top" title="open ERDDAP console to customize output">
+          <Button type="primary" tag="a" href={erddapUrl} target="_blank" style={{marginRight: "20px"}}>Customize</Button>
+        </Tooltip>
+        <Tooltip placement="top" title="Download standard CSV file with current filters applied">
+          <Button type="primary" tag="a" href={erddapUrl?.replace('deep_sea_corals.html', 'deep_sea_corals.csvp')} target="_blank" >Download</Button>
+        </Tooltip>
       </div>
-      <div>
-      
+      <div style={{marginTop: '15px'}}>
+        <span>ERDDAP may take a few minutes to respond to your request</span>
       </div>
 
     </div>
