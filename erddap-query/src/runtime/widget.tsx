@@ -125,7 +125,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     } else {
       // WARNING: bug exists if Shallow filter and only 1 depth specified. No 
       // way to tell if min/max depths specified or combination of Shallow and 
-      // one depth value
+      // single depth value
       fields.filter(i => i[0] == 'DEPTHINMETERS').forEach(i => {
         params.push(`DepthInMeters${i[1]}${i[2]}`)
       })
