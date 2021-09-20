@@ -1,0 +1,52 @@
+/** @jsx jsx */
+import { AllWidgetProps,  jsx, DataSourceManager } from 'jimu-core';
+import {Nav, NavItem, NavLink, NavMenu, Navbar} from 'jimu-ui';
+import { useState, useEffect } from 'react';
+import { IMConfig } from '../config';
+
+export default function (props: AllWidgetProps<IMConfig>) {
+  const [urls, setUrls] = useState([])
+
+
+  useEffect(() => {
+    console.log('inside one time setup...')
+    console.log('reading from ' + props.config.menuItemsConfigUrl)
+    fetch(props.config.menuItemsConfigUrl)
+    .then(response => response.json())
+    .then(data => {
+      console.log(data)
+      setUrls(data)
+    })
+
+  },[]);
+
+
+  useEffect(() => {
+    console.log('urls updated: ', urls)
+  }, [urls])
+
+
+  return( 
+    <div className="jimu-widget">
+        <Navbar style={{width: '150px', textAlign: 'left'}}>
+          <Nav>
+            <NavItem>
+              <NavLink caret>
+                Go To:
+              </NavLink>
+              <NavMenu>
+                {
+                  urls.map((item) => 
+                    <NavItem>
+                      <NavLink href={item.url} target="_blank">{item.label}</NavLink>
+                    </NavItem>
+                  ) 
+                }
+              </NavMenu>
+            </NavItem>
+          </Nav>
+      </Navbar>
+    </div>
+  )
+}
+
