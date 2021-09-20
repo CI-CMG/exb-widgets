@@ -29,8 +29,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [isStationary, setIsStationary] = useState(true)
   let stationaryWatch
   let extentWatch
-  // console.log(props.config.erddapBaseUrl)
-  console.log(props.id)
 
   // only called when widget first opened
   const activeViewChangeHandler = (jmv: JimuMapView) => {
@@ -111,12 +109,9 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
 
   function convertSqlToErddapParams(sql:string) {
-    console.log(sql)
     const params = []
     const regex = /[()]/g
     const fields = sql.replace(regex, '').split(' AND ').map(s => s.match(/\S+/g))
-    console.log(fields)
-    console.log(fields.filter(i => i[0] == 'DEPTHINMETERS'))
     let item
 
     // if ShallowFlag and Depth range specified, ShallowFlag takes precedence

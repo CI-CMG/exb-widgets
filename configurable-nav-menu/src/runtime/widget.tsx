@@ -9,21 +9,16 @@ export default function (props: AllWidgetProps<IMConfig>) {
 
 
   useEffect(() => {
-    console.log('inside one time setup...')
-    console.log('reading from ' + props.config.menuItemsConfigUrl)
+    // one time setup
     fetch(props.config.menuItemsConfigUrl)
     .then(response => response.json())
-    .then(data => {
-      console.log(data)
-      setUrls(data)
-    })
-
+    .then(data => setUrls(data))
   },[]);
 
 
-  useEffect(() => {
-    console.log('urls updated: ', urls)
-  }, [urls])
+  // useEffect(() => {
+  //   console.log('urls updated: ', urls)
+  // }, [urls])
 
 
   return( 
