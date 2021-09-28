@@ -1,7 +1,4 @@
 /** @jsx jsx */
-/// <reference path="/Users/jcc/Applications/ArcGISExperienceBuilder/client/types/arcgis-js-api.d.ts" />
-/// <reference path="/Users/jcc/Applications/ArcGISExperienceBuilder/client/jimu-core/index.d.ts" />
-
 import { AllWidgetProps, jsx } from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
@@ -137,7 +134,7 @@ export default function (props: AllWidgetProps<{}>) {
       item.attributes.Count
     ])
     // sort by count, descending
-    stats.sort((a, b) => b[3] - a[3])
+    stats.sort((a, b) => b[1] - a[1])
     setStats(stats)
     setIsProcessing(false)
   }
