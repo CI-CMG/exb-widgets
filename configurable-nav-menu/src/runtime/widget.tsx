@@ -27,7 +27,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
           <Nav>
             <NavItem>
               <NavLink caret>
-                Go To:
+                Category:
               </NavLink>
               <NavMenu>
                 {
