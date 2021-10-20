@@ -1,15 +1,20 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx } from "jimu-core";
+import { AllWidgetProps, jsx, IMState, SqlQueryParams } from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
 import * as Extent from "esri/geometry/Extent";
+import { IMConfig } from '../config';
+
+interface ExtraProps {
+  sqlString: any
+}
 
 
-//TODO used named export
-export default function (props: AllWidgetProps<{}>) {
+export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [extent, setExtent] = useState()
   // const [view, setView] = useState()
+  const [whereClause, setWhereClause] = useState('1=1')
   const [isStationary, setIsStationary] = useState(true)
   const [sampleCount, setSampleCount] = useState('')
   const [stats, setStats] = useState([])
@@ -23,7 +28,7 @@ export default function (props: AllWidgetProps<{}>) {
 
   async function countSamples(extent:Extent) {
     const searchParams = new URLSearchParams([
-      ['where', '1=1'],
+      ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
       ['geometryType', 'esriGeometryEnvelope'],
       ['spatialRel', 'esriSpatialRelIntersects'],
@@ -47,7 +52,7 @@ export default function (props: AllWidgetProps<{}>) {
   async function sampleStatistics(extent:Extent, fieldname='VERNACULARNAMECATEGORY') {  
     const outStatistics = `[{"statisticType":"count","onStatisticField":"${fieldname}","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
-      ['where', '1=1'],
+      ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
       // ['geometry', '{"spatialReference":{"latestWkid":3857,"wkid":102100},"xmin":-9537248.222581755,"ymin":2411063.266354613,"xmax":-7382335.5211666385,"ymax":3487296.624609608}'],
       ['geometryType', 'esriGeometryEnvelope'],
@@ -77,7 +82,7 @@ export default function (props: AllWidgetProps<{}>) {
   async function statisticsByScientificName(extent:Extent, fieldname='SCIENTIFICNAME') {  
     const outStatistics = `[{"statisticType":"count","onStatisticField":"OBJECTID","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
-      ['where', '1=1'],
+      ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
       // ['geometry', '{"spatialReference":{"latestWkid":3857,"wkid":102100},"xmin":-9537248.222581755,"ymin":2411063.266354613,"xmax":-7382335.5211666385,"ymax":3487296.624609608}'],
       ['geometryType', 'esriGeometryEnvelope'],
@@ -107,7 +112,7 @@ export default function (props: AllWidgetProps<{}>) {
   async function statisticsByTaxon(extent:Extent) {  
     const outStatistics = `[{"statisticType":"count","onStatisticField":"OBJECTID","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
-      ['where', '1=1'],
+      ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
       ['geometryType', 'esriGeometryEnvelope'],
       ['spatialRel', 'esriSpatialRelIntersects'],
@@ -157,6 +162,23 @@ export default function (props: AllWidgetProps<{}>) {
   }, [])
 
 
+  function getQuery(): SqlQueryParams {
+    if (props.sqlString) {
+      return {
+        where: props.sqlString
+      }
+    }
+    // TODO use undefined instead?
+    return {where: '(1=1)'}
+  }
+
+
+  // runs with each re-render
+  useEffect(() => {
+    setWhereClause(getQuery().where)
+  })
+
+
   // TODO could separate out total sample count into a separate useEffect 
   // block since it doesn't need to update with radio button change
   useEffect(() => {
@@ -182,7 +204,7 @@ export default function (props: AllWidgetProps<{}>) {
     } else if (summaryField == 'SCIENTIFICNAME') {
       statisticsByScientificName(extent)
     }
-  }, [extent, isStationary, summaryField])
+  }, [extent, isStationary, summaryField, whereClause])
 
 
   // only called when widget first opened
@@ -258,4 +280,18 @@ export default function (props: AllWidgetProps<{}>) {
       </div>
     </div>
   );
+}
+
+// this runs a lot, even when widget is not re-rendered
+Widget.mapExtraStateProps = (state: IMState, ownProps: AllWidgetProps<IMConfig>): ExtraProps => {
+  let wId: string;
+  for (const [key, value] of Object.entries(state.widgetsState)) {
+    // console.log(`widget ${key}: ` , value)
+    if(value['sqlString']){
+      wId = key;
+    }
+  }
+  return {
+    sqlString: state.widgetsState[wId]?.sqlString
+  }
 }
