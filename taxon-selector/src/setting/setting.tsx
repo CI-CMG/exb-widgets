@@ -1,30 +1,20 @@
-/**
-  Licensing
+/** @jsx jsx */
+import { React, jsx, DataSourceTypes, Immutable, UseDataSource } from 'jimu-core'
+import { AllWidgetSettingProps } from 'jimu-for-builder'
+import { DataSourceSelector } from 'jimu-ui/advanced/data-source-selector'
+import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components'
 
-  Copyright 2021 Esri
 
-  Licensed under the Apache License, Version 2.0 (the "License"); You
-  may not use this file except in compliance with the License. You may
-  obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
+export default function Setting (props: AllWidgetSettingProps<{}>) {
+  const supportedTypes = Immutable([DataSourceTypes.FeatureLayer])
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-  implied. See the License for the specific language governing
-  permissions and limitations under the License.
-
-  A copy of the license is available in the repository's
-  LICENSE file.
-*/
-import {React, Immutable, DataSourceManager} from 'jimu-core';
-import {AllWidgetSettingProps} from 'jimu-for-builder';
-import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
-import {ArcGISDataSourceTypes} from 'jimu-arcgis';
-import { TextInput } from 'jimu-ui';
-// import { IMConfig } from "../config";
-
-export default function (props: AllWidgetSettingProps<{}>) {
+  const onDataSourceChange = (useDataSources: UseDataSource[]) => {
+    props.onSettingChange({
+      id: props.id,
+      useDataSources: useDataSources
+    })
+  }
+  
 
   const onMapSelected = (useMapWidgetIds: string[]) => {
     props.onSettingChange({
@@ -32,12 +22,21 @@ export default function (props: AllWidgetSettingProps<{}>) {
       useMapWidgetIds: useMapWidgetIds
     });
   }
-
+  
   return (
-      <div className="sample-use-map-view-setting p-2">
-      <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
-      
-      <TextInput placeholder="Enter the service URL..." defaultValue=""/>
+    <div className='widget-setting-demo p-3'>
+      <span>Select DataSource to filter:</span>
+      <DataSourceSelector
+        mustUseDataSource
+        types={supportedTypes}
+        useDataSources={props.useDataSources}
+        onChange={onDataSourceChange}
+        widgetId={props.id}
+      />
+    <br/>
+    <span>Select the Map to watch:</span> 
+      <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/> 
     </div>
   )
+  
 }

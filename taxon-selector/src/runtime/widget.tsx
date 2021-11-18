@@ -1,5 +1,14 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx, IMState, SqlQueryParams } from "jimu-core";
+import { 
+  AllWidgetProps, 
+  jsx, 
+  IMState, 
+  DataSourceComponent, 
+  SqlQueryParams, 
+  QueriableDataSource, 
+  DataSource,
+  appActions 
+} from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { Select, Option, Button, Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
@@ -12,6 +21,9 @@ interface ExtraProps {
 
 
 export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
+  const [dataSource, setDataSource] = useState(null)
+  const [view, setView] = useState()
+  const [definitionExpression, setDefinitionExpression] = useState()
   const [phylums, setPhylums] = useState(new Map())
   const [orders, setOrders] = useState(new Map())
   const [families, setFamilies] = useState(new Map())
@@ -19,17 +31,37 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [selectedOrder, setSelectedOrder] = useState()
   const [selectedFamily, setSelectedFamily] = useState()
   const [selectedGenus, setSelectedGenus] = useState()
-
-
-  const [whereClause, setWhereClause] = useState('1=1')
+  let sqlWatch
   const mapServiceUrl = 'https://gis.ngdc.noaa.gov/arcgis/rest/services/DSCRTP/MapServer/0/query?'
 
-  const [urls, setUrls] = useState([])
+  // handle changes to taxon selections. update map and publish new values
+  useEffect(() => {
+    if (!dataSource || ! view) {
+      console.warn("DataSource and/or MapView not yet set. QueryParams cannot updated")
+      return
+    }
 
-  
+    let selectedTaxon = []
+    if (selectedPhylum) { selectedTaxon.push(selectedPhylum) }
+    if (selectedFamily) { selectedTaxon.push(selectedFamily) }
+    if (selectedOrder) { selectedTaxon.push(selectedOrder) }
+    if (selectedGenus) { selectedTaxon.push(selectedGenus) }
+
+    const q = getQuery();
+    (dataSource as QueriableDataSource).updateQueryParams(q, props.id)    
+  }, [selectedPhylum, selectedFamily, selectedOrder, selectedGenus])
+
   // run once when widget is loaded
   useEffect(() => {
     getTaxonData()
+
+    // one-time cleanup function. remove watches at time componment is destroyed 
+    return function cleanup() {
+      if (sqlWatch) {
+        sqlWatch.remove()
+        sqlWatch = null
+      }
+    }
   },[])
 
 
@@ -85,130 +117,163 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   }
     
 
+  /**
+   * construct SQL clause based on taxon selections
+   * Note that other filter criteria are managed independently by the Filter widget
+   */
   function getQuery(): SqlQueryParams {
-    // TODO add any taxon selection to other query
-    if (props.sqlString) {
-      return {
-        where: props.sqlString
-      }
-    }
-    // TODO use undefined instead?
-    return {where: '(1=1)'}
+    let clauses = []
+
+    // Feature Layer used different column names than map service
+    if (selectedPhylum) { clauses.push(`Phylum = '${selectedPhylum}'`) }
+    if (selectedFamily) { clauses.push(`Family = '${selectedFamily}'`) }
+    // Order is a SQL reserved word
+    if (selectedOrder) { clauses.push(`Order_ = '${selectedOrder}'`) }
+    if (selectedGenus) { clauses.push(`Genus = '${selectedGenus}'`) }
+    
+    if (clauses?.length) {
+      return({where: clauses.join(' AND ')})
+    } else {
+      return null
+    }    
   }
 
 
-  // runs with each re-render
-  useEffect(() => {
-    // TODO apply SQL constraint to map view
-    console.log(getQuery())
-    setWhereClause(getQuery().where)
-  })
-
-  // only called when widget first opened
-  const activeViewChangeHandler = (jmv: JimuMapView) => {
-    if (! jmv) {
-      console.warn('no mapview')
-      return
-    }
-    // setView(jmv.view)
-  };
-
-
   function resetButtonHandler(e) {
-    console.log('reset selects to default value')
-    setSelectedPhylum(null)
-    setSelectedOrder(null)
-    setSelectedFamily(null)
-    setSelectedGenus(null)
+    if (selectedPhylum) { setSelectedPhylum(null) }
+    if (selectedOrder) { setSelectedOrder(null) }
+    if (selectedFamily) { setSelectedFamily(null) }
+    if (selectedGenus) { setSelectedGenus(null) }
   }
 
 
   function phylumSelectHandler(e) {
     setSelectedPhylum(e.target.value)
-    // setting of state value is async so use event value
-    console.log('phylum is now '+e.target.value)
   }
 
 
   function orderSelectHandler(e) {
     setSelectedOrder(e.target.value)
-    console.log('order is now '+e.target.value)
-
   }
+
 
   function familySelectHandler(e) {
     setSelectedFamily(e.target.value)
-    console.log('family is now '+e.target.value)
+    // console.log('family is now '+e.target.value)
   }
+
 
   function genusSelectHandler(e) {
     setSelectedGenus(e.target.value)
-    console.log('genus is now '+e.target.value)
   }
 
+
+  // runs once
+  function onDataSourceCreated(ds: DataSource) {
+    if (ds) {
+      const dataSource = ds as QueriableDataSource
+      setDataSource(dataSource)
+      console.log(dataSource)
+      console.log(dataSource.getLabel(),dataSource.getInfo())
+
+      // dataSource.updateQueryParams(getQuery(), props.id)
+    } else {
+      console.error('unable to create DataSource')
+    }
+  }
   
+
+  function parseSql(sqlString:string) {
+    if (sqlString === '(1=1)' || !sqlString) {
+      return []
+    }
+    const regex = /(\([^\()]*\))/g;
+    const matches = sqlString.match(regex)
+    if (! matches.length) {
+      // shouldn't ever happen
+      console.error(`string ${sqlString} produced no matches`)
+      return
+    }
+    return(matches)
+  }
+
+
+  // runs once
+  const activeViewChangeHandler = (jmv: JimuMapView) => {
+    if (! jmv) {
+      console.warn('no MapView')
+      return
+    }
+    setView(jmv.view)
+
+    // setup watch to report changes in layer's definitionExpression
+    if (!sqlWatch) {
+      const layerTitle = dataSource.getLabel()
+      const layer = jmv.view.map.layers.find(lyr => lyr.title === layerTitle)
+      sqlWatch = layer.watch('definitionExpression', (newExpression, oldExpression) => {
+        console.log('taxon-selector: definitionExpression changed from '+oldExpression+' to '+newExpression)
+        setDefinitionExpression(newExpression)
+      });
+    }
+
+  }
+
+
   return (
     <div className="" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+      <div>
+      <DataSourceComponent
+          useDataSource={props.useDataSources?.[0]}
+          widgetId={props.id}
+          onDataSourceCreated={onDataSourceCreated}
+        />
+      <JimuMapViewComponent 
+        useMapWidgetId={props.useMapWidgetIds?.[0]} 
+        onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
+
+    </div>
     <Select
-        defaultValue={{}}
         value={selectedPhylum}
         onChange={phylumSelectHandler}
         placeholder="Select a Phylum..."
-        style={{width: 200}}
+        style={{padding: '10px', width: 200}}
         disabled={phylums.size < 1}
       >
       {Array.from(phylums.keys()).map(item => <Option value={item}>{item}</Option>)}
     </Select>
 
     <Select
-        defaultValue={{}}
         value={selectedOrder}
         onChange={orderSelectHandler}
         placeholder="Select an Order..."
-        style={{width: 200}}
+        style={{paddingLeft: '10px',  paddingBottom: '10px', width: 200}}
         disabled={!selectedPhylum}
       >
       {selectedPhylum && phylums.get(selectedPhylum)?.map(item => <Option value={item}>{item}</Option>)}
     </Select>
 
     <Select
-        defaultValue={{}}
         value={selectedFamily}
         onChange={familySelectHandler}
         placeholder="Select a Family..."
-        style={{width: 200}}
+        style={{paddingLeft: '10px',  paddingBottom: '10px', width: 200}}
         disabled={!selectedOrder}
       >
       {selectedOrder && orders.get(selectedOrder)?.map(item => <Option value={item}>{item}</Option>)}
     </Select>
 
     <Select
-        defaultValue={{}}
         value={selectedGenus}
         onChange={genusSelectHandler}
         placeholder="Select a Genus..."
-        style={{width: 200}}
+        style={{paddingLeft: '10px', paddingBottom: '10px', width: 200}}
         disabled={!selectedFamily}
       >
       {selectedFamily && families.get(selectedFamily)?.map(item => <Option value={item}>{item}</Option>)}
     </Select>
 
-    <Button onClick={resetButtonHandler}>Reset</Button>
+    <Button style={{margin: '10px'}} onClick={resetButtonHandler}>Reset</Button>
         
     </div>
   );
-}
-
-// this runs a lot, even when widget is not re-rendered
-Widget.mapExtraStateProps = (state: IMState, ownProps: AllWidgetProps<IMConfig>): ExtraProps => {
-  let wId: string;
-  for (const [key, value] of Object.entries(state.widgetsState)) {
-    // console.log(`widget ${key}: ` , value)
-    if(value['sqlString']){
-      wId = key;
-    }
-  }
-  return {
-    sqlString: state.widgetsState[wId]?.sqlString
-  }
 }
