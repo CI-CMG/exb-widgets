@@ -159,7 +159,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
   function familySelectHandler(e) {
     setSelectedFamily(e.target.value)
-    // console.log('family is now '+e.target.value)
   }
 
 
@@ -173,10 +172,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     if (ds) {
       const dataSource = ds as QueriableDataSource
       setDataSource(dataSource)
-      console.log(dataSource)
-      console.log(dataSource.getLabel(),dataSource.getInfo())
-
-      // dataSource.updateQueryParams(getQuery(), props.id)
     } else {
       console.error('unable to create DataSource')
     }
