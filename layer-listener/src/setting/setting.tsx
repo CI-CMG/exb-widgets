@@ -1,30 +1,13 @@
-/**
-  Licensing
-
-  Copyright 2021 Esri
-
-  Licensed under the Apache License, Version 2.0 (the "License"); You
-  may not use this file except in compliance with the License. You may
-  obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-  implied. See the License for the specific language governing
-  permissions and limitations under the License.
-
-  A copy of the license is available in the repository's
-  LICENSE file.
-*/
-import {React, Immutable, DataSourceManager} from 'jimu-core';
+import {React, Immutable, DataSourceManager,DataSourceTypes,UseDataSource} from 'jimu-core';
 import {AllWidgetSettingProps} from 'jimu-for-builder';
 import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
+import { DataSourceSelector } from 'jimu-ui/advanced/data-source-selector'
 import {ArcGISDataSourceTypes} from 'jimu-arcgis';
-import { TextInput } from 'jimu-ui';
+import { TextInput, NumericInput } from 'jimu-ui';
 import { IMConfig } from "../config";
 
 export default function (props: AllWidgetSettingProps<{}>) {
+  const supportedTypes = Immutable([DataSourceTypes.FeatureLayer])
 
   const onMapSelected = (useMapWidgetIds: string[]) => {
     props.onSettingChange({
@@ -33,10 +16,41 @@ export default function (props: AllWidgetSettingProps<{}>) {
     });
   }
 
+  const onDataSourceChange = (useDataSources: UseDataSource[]) => {
+    props.onSettingChange({
+      id: props.id,
+      useDataSources: useDataSources
+    })
+  }
+
+  const onZoomLevelSelected = (value:number ) =>{
+    props.onSettingChange({
+      id: props.id,
+      config: props.config.set('zoomLevelToggle', value)
+    });
+  }
+
+
   return (
-      <div className="sample-use-map-view-setting p-2">
-        <h3>Select the Map to watch:</h3> 
-      <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>      
+    <div className="sample-use-map-view-setting p-2">
+      <div>
+        <label>Select the Map to watch:</label> 
+        <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
+      </div>
+      <div>
+        <label>Select the Map Layer to watch</label>
+        <DataSourceSelector
+          mustUseDataSource
+          types={supportedTypes}
+          useDataSources={props.useDataSources}
+          onChange={onDataSourceChange}
+          widgetId={props.id}
+        />
+      </div>
+      <div>
+        <label>Toggle at Zoom Level:</label>
+        <NumericInput min="1" max="14" defaultValue="7" onAcceptValue={onZoomLevelSelected}/>
+      </div>
     </div>
   )
 }

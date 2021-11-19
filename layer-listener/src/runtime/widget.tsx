@@ -1,5 +1,5 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx, IMState, SqlQueryParams } from "jimu-core";
+import { AllWidgetProps, jsx, IMState, SqlQueryParams, DataSourceComponent, DataSource, QueriableDataSource } from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
@@ -12,7 +12,7 @@ interface ExtraProps {
 
 
 export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
-  console.log(props.config)
+  const [dataSource, setDataSource] = useState(null)
   const [extent, setExtent] = useState()
   const [view, setView] = useState()
   // useRef instead?
@@ -39,6 +39,11 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         stationaryWatch.remove()
         stationaryWatch = null
       }
+      if (sqlWatch) {
+        sqlWatch.remove()
+        sqlWatch = null
+      }
+
     }
   }, [])
 
@@ -49,14 +54,13 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         where: props.sqlString
       }
     }
-    // TODO use undefined instead?
-    return {where: '(1=1)'}
+    return null
   }
 
   // runs with each re-render
-  useEffect(() => {
-    setWhereClause(getQuery().where)
-  })
+  // useEffect(() => {
+  //   setWhereClause(getQuery().where)
+  // })
 
   useEffect(() => {
     if (!extent) {
@@ -68,12 +72,17 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       return
     }
 
+    if (!view || !dataSource) {
+      // need both MapView and DataSource
+      return
+    }
     const zoom = view.zoom
     console.log('Zoom: ', zoom)
     console.log('Where:', whereClause)
 
-    console.log('layerTitle: ', props.config.layerTitle)
-    const layer = view.map.layers.find(lyr => lyr.title === props.config.layerTitle)
+    // const layer = view.map.layers.find(lyr => lyr.title === props.config.layerTitle)
+    const layer = view.map.layers.find(lyr => lyr.title === dataSource.getLabel())
+
     if (whereClause && whereClause != '(1=1)') {
       layer.visible = true
     } else if (definitionExpression && definitionExpression != '(1=1)') {
@@ -92,6 +101,18 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   useEffect(() => {
     console.log('definitionExpression: ', definitionExpression)
   }, [definitionExpression])
+
+
+
+  // runs once
+  function onDataSourceCreated(ds: DataSource) {
+    if (ds) {
+      const dataSource = ds as QueriableDataSource
+      setDataSource(dataSource)
+    } else {
+      console.error('unable to create DataSource')
+    }
+  }
 
 
   // only called when widget first loaded
@@ -141,9 +162,19 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       <JimuMapViewComponent 
         useMapWidgetId={props.useMapWidgetIds?.[0]} 
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
-
+      <DataSourceComponent
+          useDataSource={props.useDataSources?.[0]}
+          widgetId={props.id}
+          onDataSourceCreated={onDataSourceCreated}
+        />
       <div style={{overflowY: 'auto', height: '100%', paddingLeft: '5px'}}>
-        <span>{whereClause}</span>
+        {(view && dataSource) ?
+          <div>
+          <span>Where: {definitionExpression? definitionExpression: 'None'}</span><br/>
+          <span>Zoom: {view.zoom}</span>
+          </div> : 
+          <span>view and datasource must be defined</span>
+        }
       </div>
     </div>
   );
