@@ -1,29 +1,14 @@
 /** @jsx jsx */
-import { 
-  AllWidgetProps, 
-  jsx, 
-  IMState, 
-  DataSourceComponent, 
-  SqlQueryParams, 
-  QueriableDataSource, 
-  DataSource,
-  appActions 
-} from "jimu-core";
+import { AllWidgetProps, jsx, DataSourceComponent, SqlQueryParams, QueriableDataSource, DataSource } from "jimu-core"
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
-import { Select, Option, Button, Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
-import * as Extent from "esri/geometry/Extent";
+import { Select, Option, Button, defaultMessages as jimuUIMessages } from 'jimu-ui';
 import { IMConfig } from '../config';
 
-interface ExtraProps {
-  sqlString: any
-}
 
-
-export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
+export default function Widget (props: AllWidgetProps<IMConfig>) {
   const [dataSource, setDataSource] = useState(null)
-  const [view, setView] = useState()
-  const [definitionExpression, setDefinitionExpression] = useState()
+  const [view, setView] = useState(null)
   const [phylums, setPhylums] = useState(new Map())
   const [orders, setOrders] = useState(new Map())
   const [families, setFamilies] = useState(new Map())
@@ -31,7 +16,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [selectedOrder, setSelectedOrder] = useState()
   const [selectedFamily, setSelectedFamily] = useState()
   const [selectedGenus, setSelectedGenus] = useState()
-  let sqlWatch
   const mapServiceUrl = 'https://gis.ngdc.noaa.gov/arcgis/rest/services/DSCRTP/MapServer/0/query?'
 
   // handle changes to taxon selections. update map and publish new values
@@ -53,19 +37,21 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
   // run once when widget is loaded
   useEffect(() => {
-    getTaxonData()
+    // getTaxonData()
+    getTaxonDataFromFeatureService()
 
     // one-time cleanup function. remove watches at time componment is destroyed 
-    return function cleanup() {
-      if (sqlWatch) {
-        sqlWatch.remove()
-        sqlWatch = null
-      }
-    }
+    // return function cleanup() {
+    //   if (sqlWatch) {
+    //     sqlWatch.remove()
+    //     sqlWatch = null
+    //   }
+    // }
   },[])
 
 
   async function getTaxonData() {
+    const startTime = new Date()
     const searchParams = new URLSearchParams([
       ['where', '1=1'],
       ['outFields', 'TAXONPHYLUM,TAXONORDER,TAXONFAMILY,TAXONGENUS'],
@@ -113,9 +99,70 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     })
     setFamilies(familyMap)
 
-    console.info('Taxon data loaded')
+    const endTime = new Date()
+    console.info(`Taxon data loaded from MapService in ${(endTime.getTime()-startTime.getTime())/1000} seconds`)
   }
     
+
+
+  async function getTaxonDataFromFeatureService() {
+    const startTime = new Date()
+    const serviceUrl = (props.config.serviceUrl)? props.config.serviceUrl : 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/ArcGIS/rest/services/Deep_Sea_Coral_Samples/FeatureServer/0/query?'
+    const searchParams = new URLSearchParams([
+      ['where', '1=1'],
+      ['outFields', 'Phylum,Order_,Family,Genus'],
+      ['orderByFields', 'Phylum,Order_,Family,Genus'],
+      ['groupByFieldsForStatistics', 'Phylum,Order_,Family,Genus'],
+      ['returnGeometry', 'false'],
+      ['returnDistinctValues', 'true'],
+      ['f', 'json']
+    ])
+    const response = await fetch(serviceUrl, {
+        method: 'POST',
+        body: searchParams
+    });
+    if (!response.ok) {
+        console.warn("Error fetching Taxon data from: " + serviceUrl)
+        return
+    }
+    const data = await response.json();
+    data.features.forEach(it => {
+      if(!it.attributes.Phylum) { it.attributes.Phylum = 'NA'}
+      if(!it.attributes.Order_) { it.attributes.Order_ = 'NA'}
+      if(!it.attributes.Family) { it.attributes.Family = 'NA'}
+      if(!it.attributes.Genus) { it.attributes.Genus = 'NA'}
+    })
+
+    // lists of Order values for each phylum
+    const phylumMap = new Map()
+    const phylumList = Array.from(new Set(data.features.map(it => it.attributes.Phylum)))
+    phylumList.forEach((phylum) => {
+        const orderList = Array.from(new Set(data.features.filter(it => it.attributes.Phylum === phylum).map(it => it.attributes.Order_)))
+        phylumMap.set(phylum, orderList)
+    })
+    setPhylums(phylumMap)
+
+    // lists of Family values for each Order
+    const orderMap = new Map()
+    const orderList = Array.from(new Set(data.features.map(it => it.attributes.Order_)))
+    orderList.forEach((order) => {
+        const familyList = Array.from(new Set(data.features.filter(it => it.attributes.Order_ === order).map(it => it.attributes.Family)))
+        orderMap.set(order, familyList)
+    })
+    setOrders(orderMap)
+
+    // lists of Genus values for each Family
+    const familyMap = new Map()
+    const familyList = Array.from(new Set(data.features.map(it => it.attributes.Family)))
+    familyList.forEach((family) => {
+        const genusList = Array.from(new Set(data.features.filter(it => it.attributes.Family === family).map(it => it.attributes.Genus)))
+        familyMap.set(family, genusList)
+    })
+    setFamilies(familyMap)
+    const endTime = new Date()
+    console.info(`Taxon data loaded from FeatureService in ${(endTime.getTime()-startTime.getTime())/1000} seconds`)
+  }
+
 
   /**
    * construct SQL clause based on taxon selections
@@ -200,17 +247,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       return
     }
     setView(jmv.view)
-
-    // setup watch to report changes in layer's definitionExpression
-    if (!sqlWatch) {
-      const layerTitle = dataSource.getLabel()
-      const layer = jmv.view.map.layers.find(lyr => lyr.title === layerTitle)
-      sqlWatch = layer.watch('definitionExpression', (newExpression, oldExpression) => {
-        console.log('taxon-selector: definitionExpression changed from '+oldExpression+' to '+newExpression)
-        setDefinitionExpression(newExpression)
-      });
-    }
-
   }
 
 
