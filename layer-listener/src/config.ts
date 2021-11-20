@@ -1,8 +1,9 @@
 import { ImmutableObject } from 'seamless-immutable';
 
 export interface Config {
-  layerTitle: string;
-  zoomLevelToggle: number
+  zoomLevelToggle: number,
+  pointLayerTitle: string,
+  densityLayerTitle: string
 }
 
 export type IMConfig = ImmutableObject<Config>;

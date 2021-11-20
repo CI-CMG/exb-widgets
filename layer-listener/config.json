@@ -1,4 +1,5 @@
 {
-    "layerTitle": "Deep Sea Coral and Sponge Observations",
-    "zoomLevelToggle": 7
+    "zoomLevelToggle": 7,
+    "pointLayerTitle": "Deep Sea Coral and Sponge Observations",
+    "densityLayerTitle": "Observation Density"
 }

@@ -1,13 +1,12 @@
-import {React, Immutable, DataSourceManager,DataSourceTypes,UseDataSource} from 'jimu-core';
+import {React} from 'jimu-core';
 import {AllWidgetSettingProps} from 'jimu-for-builder';
 import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
-import { DataSourceSelector } from 'jimu-ui/advanced/data-source-selector'
-import {ArcGISDataSourceTypes} from 'jimu-arcgis';
+import { SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components'
 import { TextInput, NumericInput } from 'jimu-ui';
 import { IMConfig } from "../config";
 
+
 export default function (props: AllWidgetSettingProps<{}>) {
-  const supportedTypes = Immutable([DataSourceTypes.FeatureLayer])
 
   const onMapSelected = (useMapWidgetIds: string[]) => {
     props.onSettingChange({
@@ -16,12 +15,6 @@ export default function (props: AllWidgetSettingProps<{}>) {
     });
   }
 
-  const onDataSourceChange = (useDataSources: UseDataSource[]) => {
-    props.onSettingChange({
-      id: props.id,
-      useDataSources: useDataSources
-    })
-  }
 
   const onZoomLevelSelected = (value:number ) =>{
     props.onSettingChange({
@@ -31,26 +24,48 @@ export default function (props: AllWidgetSettingProps<{}>) {
   }
 
 
+  const onDensityLayerChange = (value:string ) =>{
+    props.onSettingChange({
+      id: props.id,
+      config: props.config.set('densityLayerTitle', value)
+    });
+  }
+  
+  
+  const onPointLayerChange = (value:string ) =>{
+    props.onSettingChange({
+      id: props.id,
+      config: props.config.set('pointLayerTitle', value)
+    });
+  }
+  
+  
   return (
     <div className="sample-use-map-view-setting p-2">
-      <div>
-        <label>Select the Map to watch:</label> 
+
+      <SettingSection title="Map to watch">
+        <SettingRow>
         <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
-      </div>
-      <div>
-        <label>Select the Map Layer to watch</label>
-        <DataSourceSelector
-          mustUseDataSource
-          types={supportedTypes}
-          useDataSources={props.useDataSources}
-          onChange={onDataSourceChange}
-          widgetId={props.id}
-        />
-      </div>
-      <div>
-        <label>Toggle at Zoom Level:</label>
+        </SettingRow>
+      </SettingSection>
+
+      <SettingSection title="Density layer">
+        <SettingRow>
+        <TextInput placeholder="layer name" htmlSize={28} onAcceptValue={onDensityLayerChange}/>
+        </SettingRow>
+      </SettingSection>
+
+      <SettingSection title="Point layer">
+        <SettingRow>
+        <TextInput placeholder="layer name" htmlSize={28} onAcceptValue={onPointLayerChange}/>
+        </SettingRow>
+      </SettingSection>
+
+      <SettingSection title="Toggle at Zoom Level">
+        <SettingRow>
         <NumericInput min="1" max="14" defaultValue="7" onAcceptValue={onZoomLevelSelected}/>
-      </div>
+        </SettingRow>
+      </SettingSection>
     </div>
   )
 }

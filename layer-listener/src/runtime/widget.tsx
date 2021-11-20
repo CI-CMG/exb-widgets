@@ -1,8 +1,8 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx, IMState, SqlQueryParams, DataSourceComponent, DataSource, QueriableDataSource } from "jimu-core";
+import { AllWidgetProps, jsx, IMState, SqlQueryParams, QueriableDataSource } from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
-import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
+import { defaultMessages as jimuUIMessages } from 'jimu-ui';
 import * as Extent from "esri/geometry/Extent";
 import { IMConfig } from '../config';
 
@@ -12,16 +12,17 @@ interface ExtraProps {
 
 
 export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
-  const [dataSource, setDataSource] = useState(null)
   const [extent, setExtent] = useState()
   const [view, setView] = useState()
   // useRef instead?
-  const [whereClause, setWhereClause] = useState('1=1')
   const [isStationary, setIsStationary] = useState(true)
   const [definitionExpression, setDefinitionExpression] = useState()
+  const [pointLayer, setPointLayer] = useState(null)
+  const [densityLayer, setDensityLayer] = useState(null)
   let stationaryWatch
   let extentWatch
   let sqlWatch
+  console.log(props.config)
 
 
 
@@ -57,10 +58,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     return null
   }
 
-  // runs with each re-render
-  // useEffect(() => {
-  //   setWhereClause(getQuery().where)
-  // })
 
   useEffect(() => {
     if (!extent) {
@@ -72,47 +69,36 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       return
     }
 
-    if (!view || !dataSource) {
-      // need both MapView and DataSource
+    if (!view) {
+      // needs MapView
       return
     }
-    const zoom = view.zoom
-    console.log('Zoom: ', zoom)
-    console.log('Where:', whereClause)
 
-    // const layer = view.map.layers.find(lyr => lyr.title === props.config.layerTitle)
-    const layer = view.map.layers.find(lyr => lyr.title === dataSource.getLabel())
-
-    if (whereClause && whereClause != '(1=1)') {
-      layer.visible = true
-    } else if (definitionExpression && definitionExpression != '(1=1)') {
-      layer.visible = true      
-    } else if (zoom > 7) {
-      layer.visible = true
-    } else {
-      layer.visible = false
+    if (!pointLayer) {
+      console.error("point layer not found")
+      return
+    }
+    if (!densityLayer) {
+      console.error("density layer not found")
+      return
     }
     
-
-
-  }, [extent, isStationary, whereClause, definitionExpression ])
-
-
-  useEffect(() => {
-    console.log('definitionExpression: ', definitionExpression)
-  }, [definitionExpression])
-
-
-
-  // runs once
-  function onDataSourceCreated(ds: DataSource) {
-    if (ds) {
-      const dataSource = ds as QueriableDataSource
-      setDataSource(dataSource)
+    if (definitionExpression && definitionExpression != '(1=1)') {
+      pointLayer.visible = true
+      densityLayer.visible = false
+    } else if (view.zoom > props.config.zoomLevelToggle) {
+      pointLayer.visible = true
+      densityLayer.visible = false
     } else {
-      console.error('unable to create DataSource')
+      pointLayer.visible = false
+      densityLayer.visible = true
     }
-  }
+
+  }, [extent, isStationary, definitionExpression ])
+
+  // useEffect(() => {
+  //   console.log('definitionExpression: ', definitionExpression)
+  // }, [definitionExpression])
 
 
   // only called when widget first loaded
@@ -121,7 +107,12 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       console.warn('no mapview')
       return
     }
+
     setView(jmv.view)
+    console.log(props.config)
+    console.log('PointLayer: ',props.config.pointLayerTitle)
+    setPointLayer(jmv.view.map.layers.find(lyr => lyr.title === props.config.pointLayerTitle))
+    setDensityLayer(jmv.view.map.layers.find(lyr => lyr.title === props.config.densityLayerTitle))
 
     if (!extent) {
       // setting initial extent...
@@ -147,7 +138,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     }
 
     if (!sqlWatch) {
-      const layer = jmv.view.map.layers.find(lyr => lyr.title === props.config.layerTitle)
+      const layer = jmv.view.map.layers.find(lyr => lyr.title === props.config.pointLayerTitle)
       setDefinitionExpression(layer.definitionExpression)
       sqlWatch = layer.watch('definitionExpression', (newExpression, oldExpression) => {
         console.log('definitionExpression changed from '+oldExpression+' to '+newExpression)
@@ -162,34 +153,16 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       <JimuMapViewComponent 
         useMapWidgetId={props.useMapWidgetIds?.[0]} 
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
-      <DataSourceComponent
-          useDataSource={props.useDataSources?.[0]}
-          widgetId={props.id}
-          onDataSourceCreated={onDataSourceCreated}
-        />
+      
       <div style={{overflowY: 'auto', height: '100%', paddingLeft: '5px'}}>
-        {(view && dataSource) ?
+        {(view) ?
           <div>
           <span>Where: {definitionExpression? definitionExpression: 'None'}</span><br/>
           <span>Zoom: {view.zoom}</span>
           </div> : 
-          <span>view and datasource must be defined</span>
+          <span>MapView must be defined</span>
         }
       </div>
     </div>
   );
-}
-
-// this runs a lot, even when widget is not re-rendered
-Widget.mapExtraStateProps = (state: IMState, ownProps: AllWidgetProps<IMConfig>): ExtraProps => {
-  let wId: string;
-  for (const [key, value] of Object.entries(state.widgetsState)) {
-    // console.log(`widget ${key}: ` , value)
-    if(value['sqlString']){
-      wId = key;
-    }
-  }
-  return {
-    sqlString: state.widgetsState[wId]?.sqlString
-  }
 }
