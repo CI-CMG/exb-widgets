@@ -2,11 +2,10 @@ import {React} from 'jimu-core';
 import {AllWidgetSettingProps} from 'jimu-for-builder';
 import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
 import { SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components'
-import { TextInput, NumericInput } from 'jimu-ui';
+import { TextInput, NumericInput, Switch } from 'jimu-ui';
 import { IMConfig } from "../config";
 
-
-export default function (props: AllWidgetSettingProps<{}>) {
+export default function (props: AllWidgetSettingProps<IMConfig>) {
 
   const onMapSelected = (useMapWidgetIds: string[]) => {
     props.onSettingChange({
@@ -40,6 +39,15 @@ export default function (props: AllWidgetSettingProps<{}>) {
   }
   
   
+  const onToggleDisplay = (checked:boolean) => {
+    console.log('insideToggleDisplay with ', checked)
+    props.onSettingChange({
+      id: props.id,
+      config: props.config.set('showValues', checked)
+    })
+  }
+
+
   return (
     <div className="sample-use-map-view-setting p-2">
 
@@ -66,6 +74,12 @@ export default function (props: AllWidgetSettingProps<{}>) {
         <NumericInput min="1" max="14" defaultValue="7" onAcceptValue={onZoomLevelSelected}/>
         </SettingRow>
       </SettingSection>
+      <SettingSection>
+        <SettingRow label="Show values">
+          <Switch checked={props.config.showValues} onChange={evt => { onToggleDisplay(evt.target.checked) }} />
+        </SettingRow>
+      </SettingSection>
+
     </div>
   )
 }

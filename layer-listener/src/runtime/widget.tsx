@@ -3,17 +3,19 @@ import { AllWidgetProps, jsx, IMState, SqlQueryParams, QueriableDataSource } fro
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { defaultMessages as jimuUIMessages } from 'jimu-ui';
-import * as Extent from "esri/geometry/Extent";
+import * as Extent from "esri/geometry/Extent"
+import * as FeatureLayer from "esri/layers/FeatureLayer"
+import * as webMercatorUtils from "esri/geometry/support/webMercatorUtils"
 import { IMConfig } from '../config';
 
 interface ExtraProps {
   sqlString: any
 }
 
-
 export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
-  const [extent, setExtent] = useState()
-  const [view, setView] = useState()
+  const [extent, setExtent] = useState(null)
+  const [view, setView] = useState(null)
+  // const [showValues, setShowValues] = useState(false)
   // useRef instead?
   const [isStationary, setIsStationary] = useState(true)
   const [definitionExpression, setDefinitionExpression] = useState()
@@ -22,8 +24,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   let stationaryWatch
   let extentWatch
   let sqlWatch
-  console.log(props.config)
-
 
 
   // fires only once, when widget initially opened
@@ -96,27 +96,21 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
   }, [extent, isStationary, definitionExpression ])
 
-  // useEffect(() => {
-  //   console.log('definitionExpression: ', definitionExpression)
-  // }, [definitionExpression])
-
-
+  
   // only called when widget first loaded
   const activeViewChangeHandler = (jmv: JimuMapView) => {
     if (! jmv) {
-      console.warn('no mapview')
+      console.warn('no MapView')
       return
     }
 
     setView(jmv.view)
-    console.log(props.config)
-    console.log('PointLayer: ',props.config.pointLayerTitle)
     setPointLayer(jmv.view.map.layers.find(lyr => lyr.title === props.config.pointLayerTitle))
     setDensityLayer(jmv.view.map.layers.find(lyr => lyr.title === props.config.densityLayerTitle))
 
     if (!extent) {
       // setting initial extent...
-      setExtent(jmv.view.extent)
+      setExtent(webMercatorUtils.webMercatorToGeographic(jmv.view.extent))
     }
 
     // setup Accessor-based watches.  Subscriptions cleaned up via useEffect
@@ -127,7 +121,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
           // new extent same as old extent, no action taken
           return
         }
-        setExtent(extent)
+        setExtent(webMercatorUtils.webMercatorToGeographic(extent))
       });
     };
 
@@ -155,12 +149,17 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
       
       <div style={{overflowY: 'auto', height: '100%', paddingLeft: '5px'}}>
-        {(view) ?
+        {(view && props.config.showValues) ?
           <div>
           <span>Where: {definitionExpression? definitionExpression: 'None'}</span><br/>
-          <span>Zoom: {view.zoom}</span>
-          </div> : 
-          <span>MapView must be defined</span>
+          <span>Zoom: {view.zoom}</span><br/>
+          <span>Extent: {extent.xmin.toFixed(3)}, {extent.ymin.toFixed(3)}, {extent.xmax.toFixed(3)}, {extent.ymax.toFixed(3)}</span>
+          </div> : ''
+        }
+        {(!view)?
+           <div>
+            <span>MapView must be defined</span>
+          </div>: ''
         }
       </div>
     </div>
