@@ -22,9 +22,10 @@ import { AllWidgetProps, jsx } from "jimu-core";
 import { useState } from 'react';
 import { IMConfig } from "../config";
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
-import * as Point from "esri/geometry/Point";
-import defaultMessages from "./translations/default";
 
+import Point from "esri/geometry/Point";
+
+import defaultMessages from "./translations/default";
 
 export default function (props: AllWidgetProps<IMConfig>) {
   const [latitude, setLatitude] = useState<string>("")
@@ -35,6 +36,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
 
   const activeViewChangeHandler = (jmv: JimuMapView) => {
     if (jmv) {
+
       // When the extent moves, update the state with all the updated values.
       jmv.view.watch("extent", evt => {
         setLatitude(jmv.view.center.latitude.toFixed(3));
@@ -60,8 +62,6 @@ export default function (props: AllWidgetProps<IMConfig>) {
         setZoom(jmv.view.zoom);
         setMapViewReady(true);
       });
-    } else {
-      console.warn('no mapview')
     }
   };
 
