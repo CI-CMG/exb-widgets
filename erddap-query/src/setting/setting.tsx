@@ -1,7 +1,8 @@
 /** @jsx jsx */
 import { React, jsx, Immutable } from 'jimu-core'
 import { AllWidgetSettingProps } from 'jimu-for-builder'
-import { JimuMapViewSelector,SettingSection,SettingRow } from 'jimu-ui/advanced/setting-components'
+// import { JimuMapViewSelector,SettingSection,SettingRow } from 'jimu-ui/advanced/setting-components'
+import { MapWidgetSelector,SettingSection,SettingRow } from 'jimu-ui/advanced/setting-components'
 import { IMConfig } from "../config";
 import defaultI18nMessages from "./translations/default";
 
@@ -24,7 +25,7 @@ export default function Setting (props: AllWidgetSettingProps<{IMConfig}>) {
           })}
         >
           <SettingRow>
-            <JimuMapViewSelector
+            <MapWidgetSelector
               onSelect={onMapWidgetSelected}
               useMapWidgetIds={props.useMapWidgetIds}
             />

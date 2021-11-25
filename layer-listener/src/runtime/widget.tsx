@@ -3,8 +3,8 @@ import { AllWidgetProps, jsx, IMState, SqlQueryParams, QueriableDataSource } fro
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { defaultMessages as jimuUIMessages } from 'jimu-ui';
-import * as Extent from "esri/geometry/Extent"
-import * as FeatureLayer from "esri/layers/FeatureLayer"
+import Extent from "esri/geometry/Extent"
+import FeatureLayer from "esri/layers/FeatureLayer"
 import webMercatorUtils from "esri/geometry/support/webMercatorUtils"
 import { IMConfig } from '../config';
 

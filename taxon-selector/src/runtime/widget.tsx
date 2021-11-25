@@ -1,5 +1,5 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx, DataSourceComponent, SqlQueryParams, QueriableDataSource, DataSource } from "jimu-core"
+import { AllWidgetProps, jsx, DataSourceComponent, SqlQueryParams, QueriableDataSource, DataSource, MessageManager, DataSourceFilterChangeMessage } from "jimu-core"
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { Select, Option, Button, defaultMessages as jimuUIMessages } from 'jimu-ui';
@@ -32,7 +32,8 @@ export default function Widget (props: AllWidgetProps<IMConfig>) {
     if (selectedGenus) { selectedTaxon.push(selectedGenus) }
 
     const q = getQuery();
-    (dataSource as QueriableDataSource).updateQueryParams(q, props.id)    
+    (dataSource as QueriableDataSource).updateQueryParams(q, props.id)
+    sendMessage()
   }, [selectedPhylum, selectedFamily, selectedOrder, selectedGenus])
 
   // run once when widget is loaded
@@ -250,6 +251,11 @@ export default function Widget (props: AllWidgetProps<IMConfig>) {
   }
 
 
+  function sendMessage() {
+    MessageManager.getInstance().publishMessage(new DataSourceFilterChangeMessage(props.id, dataSource.id));
+  }
+
+  
   return (
     <div className="" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
       <div>

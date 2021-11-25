@@ -3,7 +3,7 @@ import { AllWidgetProps, jsx, IMState, SqlQueryParams } from "jimu-core";
 import { useState, useEffect } from 'react';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
-import * as Extent from "esri/geometry/Extent";
+import Extent from "esri/geometry/Extent";
 import { IMConfig } from '../config';
 
 interface ExtraProps {

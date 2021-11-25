@@ -1,6 +1,7 @@
 import {React} from 'jimu-core';
 import {AllWidgetSettingProps} from 'jimu-for-builder';
-import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
+// import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components';
+import {MapWidgetSelector} from 'jimu-ui/advanced/setting-components';
 import { SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components'
 import { TextInput, NumericInput, Switch } from 'jimu-ui';
 import { IMConfig } from "../config";
@@ -53,7 +54,7 @@ export default function (props: AllWidgetSettingProps<IMConfig>) {
 
       <SettingSection title="Map to watch">
         <SettingRow>
-        <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
+        <MapWidgetSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
         </SettingRow>
       </SettingSection>
 

@@ -2,7 +2,8 @@
 import { React, jsx, DataSourceTypes, Immutable, UseDataSource } from 'jimu-core'
 import { AllWidgetSettingProps } from 'jimu-for-builder'
 import { DataSourceSelector } from 'jimu-ui/advanced/data-source-selector'
-import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components'
+// import {JimuMapViewSelector} from 'jimu-ui/advanced/setting-components'
+import {MapWidgetSelector} from 'jimu-ui/advanced/setting-components'
 import { SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components'
 import { TextInput} from 'jimu-ui'
 
@@ -51,7 +52,7 @@ export default function Setting (props: AllWidgetSettingProps<{}>) {
 
       <SettingSection title="Map to watch">
         <SettingRow>
-          <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/> 
+          <MapWidgetSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/> 
         </SettingRow>
       </SettingSection>
 
