@@ -3,12 +3,20 @@
   "label": "Sample Counts",
   "type": "widget",
   "dependency": "jimu-arcgis",
-  "version": "1.0.0",
-  "exbVersion": "1.5.0",
+  "version": "2.0.0",
+  "exbVersion": "1.6.0",
   "author": "John Cartwright",
   "description": "Displays sample counts within the current map extent",
   "copyright": "",
   "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "messageActions": [
+    {
+      "name": "filter-change",
+      "label": "Filter Change",
+      "uri": "actions/filter-change-action",
+      "settingUri": "actions/filter-change-action-setting"
+    }
+  ],
   "properties": {},
   "translatedLocales": [
     "en"

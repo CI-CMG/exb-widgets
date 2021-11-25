@@ -18,15 +18,15 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [isStationary, setIsStationary] = useState(true)
   const [sampleCount, setSampleCount] = useState('')
   const [stats, setStats] = useState([])
-  const [summaryField, setSummaryField] = useState('VERNACULARNAMECATEGORY')
+  const [summaryField, setSummaryField] = useState('VernacularNameCategory')
   const [isProcessing, setIsProcessing] = useState(true)
   let stationaryWatch
   let extentWatch
-  const featureServiceUrl = 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/Deep Sea Corals Feature Layer/FeatureServer/0/query'
-  const mapServiceUrl = 'https://gis.ngdc.noaa.gov/arcgis/rest/services/DSCRTP/MapServer/0/query?'
+  const featureServiceUrl = 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/Deep_Sea_Coral_Samples/FeatureServer/0/query'
 
 
   async function countSamples(extent:Extent) {
+    console.log('inside countSamples. whereClause =  ', whereClause)
     const searchParams = new URLSearchParams([
       ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
@@ -49,7 +49,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   }
 
 
-  async function sampleStatistics(extent:Extent, fieldname='VERNACULARNAMECATEGORY') {  
+  async function sampleStatistics(extent:Extent, fieldname='VernacularNameCategory') {  
     const outStatistics = `[{"statisticType":"count","onStatisticField":"${fieldname}","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
       ['where', whereClause],
@@ -71,7 +71,8 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         return
     }
     const json = await response.json();
-    const stats = json.features.map(item => [item.attributes.VERNACULARNAMECATEGORY, item.attributes.Count])
+    console.log(json)
+    const stats = json.features.map(item => [item.attributes.VernacularNameCategory, item.attributes.Count])
     // sort by count, descending
     stats.sort((a, b) => b[1] - a[1])
     setStats(stats)
@@ -79,7 +80,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   }
 
 
-  async function statisticsByScientificName(extent:Extent, fieldname='SCIENTIFICNAME') {  
+  async function statisticsByScientificName(extent:Extent, fieldname='ScientificName') {  
     const outStatistics = `[{"statisticType":"count","onStatisticField":"OBJECTID","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
       ['where', whereClause],
@@ -101,7 +102,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         return
     }
     const json = await response.json();
-    const stats = json.features.map(item => [item.attributes.SCIENTIFICNAME, item.attributes.Count])
+    const stats = json.features.map(item => [item.attributes.ScientificName, item.attributes.Count])
     // sort by count, descending
     stats.sort((a, b) => b[1] - a[1])
     setStats(stats)
@@ -110,31 +111,39 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
 
   async function statisticsByTaxon(extent:Extent) {  
-    const outStatistics = `[{"statisticType":"count","onStatisticField":"OBJECTID","outStatisticFieldName":"Count"}]`
+    const outStatistics = `[{"statisticType":"count","onStatisticField":"ObjectId","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
       ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
       ['geometryType', 'esriGeometryEnvelope'],
       ['spatialRel', 'esriSpatialRelIntersects'],
       ['returnGeometry', 'false'],
-      ['groupByFieldsForStatistics', "TAXONPHYLUM,TAXONORDER,TAXONFAMILY"],
+      ['groupByFieldsForStatistics', "Phylum,Order_,Family"],
       ['outStatistics', outStatistics],
       ['f', 'json']
     ])
     // MapService contains TAXON fields but hosted Feature Layer does not
-    const response = await fetch(mapServiceUrl, {
+    const response = await fetch(featureServiceUrl, {
         method: 'POST',
         body: searchParams
     });
     if (!response.ok) {
-        console.warn("Error fetching data from: " + mapServiceUrl)
+        console.warn("Error fetching data from: " + featureServiceUrl)
         return
     }
     const json = await response.json();
+
+    // put the NA values back in blank fields
+    json.features.forEach(it => {
+      if(!it.attributes.Phylum) { it.attributes.Phylum = 'NA'}
+      if(!it.attributes.Order_) { it.attributes.Order_ = 'NA'}
+      if(!it.attributes.Family) { it.attributes.Family = 'NA'}
+      if(!it.attributes.Genus) { it.attributes.Genus = 'NA'}
+    })
     const stats = json.features.map(item => [
-      [ item.attributes.TAXONPHYLUM, 
-        item.attributes.TAXONORDER=='NA'?'':item.attributes.TAXONORDER, 
-        item.attributes.TAXONFAMILY=='NA'?'':item.attributes.TAXONFAMILY
+      [ item.attributes.Phylum, 
+        item.attributes.Order_=='NA'?'':item.attributes.Order_, 
+        item.attributes.Family=='NA'?'':item.attributes.Family
       ].join(' '), 
       item.attributes.Count
     ])
@@ -163,6 +172,14 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
 
   function getQuery(): SqlQueryParams {
+    if (props.stateProps?.queryString) {
+      return {
+        where: props.stateProps.queryString
+      }
+    } else {
+      return {where: '(1=1)'}
+    }
+    /*
     if (props.sqlString) {
       return {
         where: props.sqlString
@@ -170,6 +187,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     }
     // TODO use undefined instead?
     return {where: '(1=1)'}
+    */
   }
 
 
@@ -197,11 +215,11 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     setIsProcessing(true)
 
     countSamples(extent)
-    if (summaryField == 'VERNACULARNAMECATEGORY') {
+    if (summaryField == 'VernacularNameCategory') {
       sampleStatistics(extent)
-    } else if (summaryField == 'TAXON') {
+    } else if (summaryField == 'Taxon') {
       statisticsByTaxon(extent)
-    } else if (summaryField == 'SCIENTIFICNAME') {
+    } else if (summaryField == 'ScientificName') {
       statisticsByScientificName(extent)
     }
   }, [extent, isStationary, summaryField, whereClause])
@@ -254,17 +272,17 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       <div style={{paddingLeft: '5px'}}>
           <Label style={{ cursor: 'pointer' }}>
             <Radio
-              style={{ cursor: 'pointer' }} value='VERNACULARNAMECATEGORY' checked={summaryField === 'VERNACULARNAMECATEGORY'} onChange={onRadioButtonChange}
+              style={{ cursor: 'pointer' }} value='VernacularNameCategory' checked={summaryField === 'VernacularNameCategory'} onChange={onRadioButtonChange}
             /> Category
           </Label>
           <Label style={{ cursor: 'pointer', paddingLeft: '20px' }}>
             <Radio
-              style={{ cursor: 'pointer' }} value='SCIENTIFICNAME' checked={summaryField === 'SCIENTIFICNAME'} onChange={onRadioButtonChange}
+              style={{ cursor: 'pointer' }} value='ScientificName' checked={summaryField === 'ScientificName'} onChange={onRadioButtonChange}
             /> Scientific Name
           </Label>
           <Label style={{ cursor: 'pointer', paddingLeft: '20px' }}>
             <Radio
-              style={{ cursor: 'pointer' }} value='TAXON' checked={summaryField === 'TAXON'} onChange={onRadioButtonChange}
+              style={{ cursor: 'pointer' }} value='Taxon' checked={summaryField === 'Taxon'} onChange={onRadioButtonChange}
             /> Taxon
           </Label>
 

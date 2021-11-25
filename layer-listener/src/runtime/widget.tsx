@@ -5,7 +5,7 @@ import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import { defaultMessages as jimuUIMessages } from 'jimu-ui';
 import * as Extent from "esri/geometry/Extent"
 import * as FeatureLayer from "esri/layers/FeatureLayer"
-import * as webMercatorUtils from "esri/geometry/support/webMercatorUtils"
+import webMercatorUtils from "esri/geometry/support/webMercatorUtils"
 import { IMConfig } from '../config';
 
 interface ExtraProps {

@@ -35,9 +35,7 @@ export default function (props: AllWidgetSettingProps<{}>) {
 
   return (
       <div className="sample-use-map-view-setting p-2">
-      <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>
-      
-      <TextInput placeholder="Enter the service URL..." defaultValue=""/>
+      <JimuMapViewSelector onSelect={onMapSelected} useMapWidgetIds={props.useMapWidgetIds}/>      
     </div>
   )
 }

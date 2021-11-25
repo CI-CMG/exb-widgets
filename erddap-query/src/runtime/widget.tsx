@@ -11,7 +11,7 @@ import {
 import { TextArea, Button, Icon, Tooltip } from 'jimu-ui';
 import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
 import Extent from "esri/geometry/Extent"
-import * as webMercatorUtils from "esri/geometry/support/webMercatorUtils"
+import webMercatorUtils from "esri/geometry/support/webMercatorUtils"
 import defaultMessages from './translations/default'
 // import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui'
 import { useState, useEffect } from 'react';
@@ -39,7 +39,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
     if (!extent) {
       // setting initial extent...
-      setExtent(webMercatorUtils.webMercatorToGeographic(jmv.view.extent))
+      setExtent(webMercatorUtils.webMercatorToGeographic(jmv.view.extent) as Extent)
     }
 
     // When the extent moves, update the state with all the updated values.
@@ -50,7 +50,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
           // new extent same as old extent, no action taken
           return
         }
-        setExtent(webMercatorUtils.webMercatorToGeographic(extent))
+        setExtent(webMercatorUtils.webMercatorToGeographic(extent) as Extent)
       });
     }
 
@@ -185,7 +185,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
           <Button type="primary" tag="a" href={erddapUrl?.replace('deep_sea_corals.html', 'deep_sea_corals.csvp')} target="_blank" >Download</Button>
         </Tooltip>
       </div>
-      <div style={{marginTop: '15px'}}>
+      <div style={{margin: '20px'}}>
         <span>ERDDAP may take a few minutes to respond to your request</span>
       </div>
 
