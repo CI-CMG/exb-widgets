@@ -1,0 +1,27 @@
+{
+  "name": "thumbnail-viewer",
+  "label": "Thumbnail Viewer",
+  "type": "widget",
+  "version": "1.6.0",
+  "exbVersion": "1.6.0",
+  "author": "John Cartwright",
+  "description": "displays image associated with selected record",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "messageActions": [
+    {
+      "name": "record-selected",
+      "label": "Record Selected",
+      "uri": "actions/record-selected-action",
+      "settingUri": "actions/record-selected-action-setting"
+    }
+  ],
+  "properties": {},
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 200,
+    "height": 200
+  }
+}
