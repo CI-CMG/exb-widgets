@@ -16,12 +16,15 @@ export default function (props: AllWidgetProps<IMConfig>) {
   const [recordCount, setRecordCount] = useState(null)
   const [dataSource, setDataSource] = useState<QueriableDataSource>()
   const [isUpdating, setIsUpdating] = useState(false)
-
-  // WARNING: this queryString value only contains criteria set by Filter widget
+  const updateCount = props.stateProps?.updateCount
+  
+  // any change in the props should cause widget to re-render and this useEffect to run
   useEffect(() => {
-    if (props.stateProps?.queryString) { updateRecordCount() }
-    console.log(props.stateProps?.queryString)
-  },[props.stateProps?.queryString])
+    if (updateCount) {
+      updateRecordCount()
+    }  
+  },[updateCount])
+
 
   // should only fire once, when DataSource is loaded
   useEffect(() => {
@@ -41,7 +44,9 @@ export default function (props: AllWidgetProps<IMConfig>) {
 
 
   function updateRecordCount() {
-    console.log('inside updateRecordCount...')
+    if (isUpdating) {
+      console.log('update already in progress, exiting function')
+    }
     setIsUpdating(true)
     // these two seem to always have same result
     const queryParams = dataSource?.getCurrentQueryParams()
@@ -62,7 +67,6 @@ export default function (props: AllWidgetProps<IMConfig>) {
         />
       Number of filtered records: <span>{(recordCount && !isUpdating)?recordCount: 'updating...'}</span>
       <br/>
-      {/* <p>{props.stateProps?.queryString && !isUpdating? props?.stateProps?.queryString: 'updating...'}</p> */}
     </div>
   )
 }
