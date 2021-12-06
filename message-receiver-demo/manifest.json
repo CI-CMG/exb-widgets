@@ -2,7 +2,7 @@
   "name": "message-receiver-demo",
   "label": "Message Receiver",
   "type": "widget",
-  "version": "1.6.0",
+  "version": "1.0.0",
   "exbVersion": "1.6.0",
   "author": "John Cartwright",
   "description": "listen for any of the built-in MessageTypes",

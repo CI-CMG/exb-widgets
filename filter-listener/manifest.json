@@ -2,7 +2,7 @@
   "name": "filter-listener",
   "label": "Filter Listener",
   "type": "widget",
-  "version": "1.6.0",
+  "version": "1.0.0",
   "exbVersion": "1.6.0",
   "author": "John Cartwright",
   "description": "listen for the DataSourceFilterChangeMessage message",

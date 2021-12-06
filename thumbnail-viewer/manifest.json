@@ -2,7 +2,7 @@
   "name": "thumbnail-viewer",
   "label": "Thumbnail Viewer",
   "type": "widget",
-  "version": "1.6.0",
+  "version": "1.0.0",
   "exbVersion": "1.6.0",
   "author": "John Cartwright",
   "description": "displays image associated with selected record",
