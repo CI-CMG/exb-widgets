@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { IMConfig } from '../config';
 
 export default function (props: AllWidgetProps<IMConfig>) {
+  const [totalRecordCount, setTotalRecordCount] = useState(null)
   const [recordCount, setRecordCount] = useState(null)
   const [dataSource, setDataSource] = useState<QueriableDataSource>()
   const [isUpdating, setIsUpdating] = useState(false)
@@ -29,6 +30,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
   // should only fire once, when DataSource is loaded
   useEffect(() => {
     updateRecordCount()
+    countAllSamples()
   },[dataSource])
 
 
@@ -42,10 +44,33 @@ export default function (props: AllWidgetProps<IMConfig>) {
     }
   }
 
+  async function countAllSamples() {
+    if (! dataSource) {
+      // can't get the Feature Service URL w/o the DataSource
+      return
+    }
+    const searchParams = new URLSearchParams([
+      ['where', '1=1'],
+      ['returnCountOnly', 'true'],
+      ['f', 'json']
+    ])
+    const response = await fetch(dataSource.url+'/query', {
+        method: 'POST',
+        body: searchParams
+    });
+    if (!response.ok) {
+        console.warn("Error fetching data from: " + dataSource.url)
+        return
+    }
+    const json = await response.json();
+    setTotalRecordCount(json.count)
+  }
+
 
   function updateRecordCount() {
     if (isUpdating) {
-      console.log('update already in progress, exiting function')
+      // console.log('update already in progress, exiting function')
+      return
     }
     setIsUpdating(true)
     // these two seem to always have same result
@@ -65,7 +90,8 @@ export default function (props: AllWidgetProps<IMConfig>) {
           widgetId={props.id}
           onDataSourceCreated={onDataSourceCreated}
         />
-      Number of filtered records: <span>{(recordCount && !isUpdating)?recordCount: 'updating...'}</span>
+      Filtered records: <span>{(recordCount && !isUpdating)?recordCount.toLocaleString("en-US") : 'updating...'}</span>
+      <span>{(!isUpdating && totalRecordCount)? ' out of ' + totalRecordCount.toLocaleString('en-US'): ''}</span> 
       <br/>
     </div>
   )
