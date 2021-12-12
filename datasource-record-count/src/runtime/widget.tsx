@@ -17,36 +17,63 @@ export default function (props: AllWidgetProps<IMConfig>) {
   const [recordCount, setRecordCount] = useState(null)
   const [dataSource, setDataSource] = useState<QueriableDataSource>()
   const [isUpdating, setIsUpdating] = useState(false)
-  const updateCount = props.stateProps?.updateCount
+  const [updateQueued, setUpdateQueued] = useState(false)
+  const updateNow = props.stateProps?.updateCount
   
   // any change in the props should cause widget to re-render and this useEffect to run
   useEffect(() => {
-    if (updateCount) {
+    // console.log('datasource-record-count: updateNow changed', updateNow)
+    if (updateNow && isUpdating) {
+      // console.log('datasource-record-count: update in progress, queuing refresh...')
+      setUpdateQueued(true)
+      return
+    }
+
+    if (updateNow) {
       updateRecordCount()
     }  
-  },[updateCount])
+  }, [updateNow])
 
 
-  // should only fire once, when DataSource is loaded
+  // should only fire twice, once when component mounted and once when DataSource is loaded
   useEffect(() => {
-    updateRecordCount()
-    countAllSamples()
-  },[dataSource])
+    // no need in proceeding w/o valid DataSource
+    if (!dataSource) { return }
+
+    if (!isUpdating) {
+      updateRecordCount() 
+    } else {
+      console.warn('datasource-record-count: update already in progress')
+    }
+  }, [dataSource])
+
+
+  useEffect(()=> {
+    if (!isUpdating && updateQueued) {
+      // console.log('datasource-record-count: no updates in progress, refreshing count...')
+      setUpdateQueued(false)
+      updateRecordCount()
+    }
+
+  }, [isUpdating])
 
 
   // runs once
   function onDataSourceCreated(ds: DataSource) {
     if (ds) {
-      const dataSource = ds as QueriableDataSource
-      setDataSource(dataSource)
+      const qds = ds as QueriableDataSource
+      setDataSource(qds)
+      countAllSamples(qds)
     } else {
-      console.error('unable to create DataSource')
+      console.error('datasource-record-count: no DataSource')
     }
   }
 
-  async function countAllSamples() {
+  
+  async function countAllSamples(dataSource:DataSource) {
     if (! dataSource) {
-      // can't get the Feature Service URL w/o the DataSource
+      // TODO better to throw Exception?
+      console.error('cannot get the Feature Service URL without the DataSource')
       return
     }
     const searchParams = new URLSearchParams([
@@ -59,7 +86,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
         body: searchParams
     });
     if (!response.ok) {
-        console.warn("Error fetching data from: " + dataSource.url)
+        console.error("Error fetching data from: " + dataSource.url)
         return
     }
     const json = await response.json();
@@ -67,22 +94,23 @@ export default function (props: AllWidgetProps<IMConfig>) {
   }
 
 
-  function updateRecordCount() {
+  async function updateRecordCount() {
     if (isUpdating) {
-      // console.log('update already in progress, exiting function')
-      return
+      console.warn('datasource-record-count: should not be attempting update while another is still running')
     }
+    // console.log('datasource-record-count: count status is ', dataSource?.getCountStatus())
     setIsUpdating(true)
-    // these two seem to always have same result
+
     const queryParams = dataSource?.getCurrentQueryParams()
-    // const runtimeQueryParams = dataSource?.getRuntimeQueryParams()
-    dataSource?.loadCount(queryParams, {widgetId: props.id}).then((o)=> {
-      setRecordCount(o)
-      setIsUpdating(false)
-    })
+    const count = await dataSource?.loadCount(queryParams, {widgetId: props.id})
+    // console.log('datasource-record-count: update complete')
+    setIsUpdating(false)
+    setRecordCount(count)
   }
 
 
+  // console.log('recordCount: ', recordCount)
+  // console.log('isUpdating: ', isUpdating)
   return( 
     <div className="widget-demo jimu-widget m-2">
       <DataSourceComponent

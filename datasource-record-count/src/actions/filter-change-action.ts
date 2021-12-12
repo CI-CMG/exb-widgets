@@ -30,20 +30,21 @@ export default class FilterAction extends AbstractMessageAction {
   onExecute(message: Message, actionConfig?: any): Promise<boolean> | boolean{
     switch(message.type){
       case MessageType.DataSourceFilterChange:
-        // console.log('got DataSourceFilterChangeMessage', message, actionConfig)
+        // console.log('filter-change-action: got DataSourceFilterChangeMessage', message, actionConfig)
         const ds:QueriableDataSource = DataSourceManager.getInstance().getDataSource((<DataSourceFilterChangeMessage>message).dataSourceId) as QueriableDataSource
         const queryParams:SqlQueryParams = ds.getCurrentQueryParams()
-        if (queryParams.where && queryParams.where != this.queryString) {
+      
+        if (queryParams.where) {
             this.queryString = queryParams.where
         } else {
-            console.log("no where clause set")
+            this.queryString = '1=1'
         }
         // trigger an update for the widget
         getAppStore().dispatch(appActions.widgetStatePropChange(this.widgetId, 'updateCount', this.queryString));
         break
       
       case MessageType.ExtentChange:
-        // console.log('got ExtentChangeMessage', <ExtentChangeMessage>message, actionConfig)
+        // console.log('filter-change-action: got ExtentChangeMessage', <ExtentChangeMessage>message, actionConfig)
         
         // TODO not sure why VSCode doesn't like "message.extent"
         const extentString = this.formatExtentAsString(message['extent'])
