@@ -26,7 +26,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
 
   async function countSamples(extent:Extent) {
-    console.log('inside countSamples. whereClause =  ', whereClause)
+    console.log('dsc-feature-counts. inside countSamples. whereClause =  ', whereClause)
     const searchParams = new URLSearchParams([
       ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
@@ -41,7 +41,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         body: searchParams
     });
     if (!response.ok) {
-        console.warn("Error fetching data from: " + featureServiceUrl)
+        console.warn("dsc-feature-counts. Error fetching data from: " + featureServiceUrl)
         return
     }
     const json = await response.json();
@@ -71,7 +71,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         return
     }
     const json = await response.json();
-    console.log(json)
+    // console.log(json)
     const stats = json.features.map(item => [item.attributes.VernacularNameCategory, item.attributes.Count])
     // sort by count, descending
     stats.sort((a, b) => b[1] - a[1])

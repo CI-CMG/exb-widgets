@@ -17,19 +17,20 @@ export default class FilterAction extends AbstractMessageAction{
     // let q = `${actionConfig.fieldName} = '${message}'`
     let queryString = '1=1'
     // TODO where is actionConfig set?
-    console.log('actionConfig: ',actionConfig)
+    // console.log('actionConfig: ',actionConfig)
 
     switch(message.type){
       case MessageType.DataSourceFilterChange:
-          console.log('got DataSourceFilterChangeMessage', message, actionConfig)
+          // console.log('filter-change-action. got DataSourceFilterChangeMessage', message, actionConfig)
           const ds:QueriableDataSource = DataSourceManager.getInstance().getDataSource((<DataSourceFilterChangeMessage>message).dataSourceId) as QueriableDataSource
           const queryParams:SqlQueryParams = ds.getCurrentQueryParams()
           const whereClause = queryParams.where
           if (whereClause) {
-              console.log("where: ", queryParams.where)
+              console.log("filter-change-action. where: ", queryParams.where)
               queryString = queryParams.where
           } else {
-              console.log("no where clause set")
+              // console.log("filter-change-action. no where clause set")
+              queryString = '1=1'
           }
     }
 

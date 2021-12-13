@@ -72,7 +72,7 @@ export default function (props: AllWidgetSettingProps<IMConfig>) {
 
       <SettingSection title="Toggle at Zoom Level">
         <SettingRow>
-        <NumericInput min="1" max="14" defaultValue="7" onAcceptValue={onZoomLevelSelected}/>
+        <NumericInput min="1" max="14" defaultValue="5" onAcceptValue={onZoomLevelSelected}/>
         </SettingRow>
       </SettingSection>
       <SettingSection>
