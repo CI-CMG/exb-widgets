@@ -88,6 +88,8 @@ export default function (props: AllWidgetProps<IMConfig>) {
     if (!response.ok) {
         console.error("Error fetching data from: " + dataSource.url)
         return
+    } else {
+      console.log('failed to count records from '+dataSource.url)
     }
     const json = await response.json();
     setTotalRecordCount(json.count)
@@ -103,7 +105,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
 
     const queryParams = dataSource?.getCurrentQueryParams()
     const count = await dataSource?.loadCount(queryParams, {widgetId: props.id})
-    // console.log('datasource-record-count: update complete')
+    console.log('datasource-record-count: update complete. Count = '+count)
     setIsUpdating(false)
     setRecordCount(count)
   }
@@ -118,7 +120,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
           widgetId={props.id}
           onDataSourceCreated={onDataSourceCreated}
         />
-      Filtered records: <span>{(recordCount && !isUpdating)?recordCount.toLocaleString("en-US") : 'updating...'}</span>
+      Filtered records: <span>{(recordCount != null && !isUpdating)?recordCount.toLocaleString("en-US") : 'updating...'}</span>
       <span>{(!isUpdating && totalRecordCount)? ' out of ' + totalRecordCount.toLocaleString('en-US'): ''}</span> 
       <br/>
     </div>
