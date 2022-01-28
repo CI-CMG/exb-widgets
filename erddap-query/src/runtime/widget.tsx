@@ -29,6 +29,8 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [isStationary, setIsStationary] = useState(true)
   let stationaryWatch
   let extentWatch
+  //TODO get URL from Settings panel
+  const CSVfileUrl = 'https://noaa.maps.arcgis.com/home/item.html?id=f465861aecac410980a7c601cfec7850'
 
   // only called when widget first opened
   const activeViewChangeHandler = (jmv: JimuMapView) => {
@@ -172,7 +174,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         {/* <TextArea style={{width:"85%"}} readOnly="true" value={erddapUrl} /> */}
         <textarea value={erddapUrl} style={{ width: "85%", height: "250px", overflowY:"scroll" }} readOnly={true}/>
         <Tooltip placement="top" title="Copy URL to clipboard">
-          <Button aria-label="Button" icon onClick={copyUrlBtn} style={{marginLeft:"10px", marginBottom:"35px"}}>
+          <Button aria-label="Button" icon onClick={copyUrlBtn} style={{marginLeft:"10px", marginBottom:"30px"}}>
             <Icon icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 32 32&quot;><path d=&quot;M18 14h10.667a2 2 0 110 4H18v10.667a2 2 0 11-4 0V18H3.333a2 2 0 110-4H14V3.333a2 2 0 114 0V14z&quot;></path></svg>" />
           </Button>
         </Tooltip>
@@ -185,6 +187,12 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
           <Button type="primary" tag="a" href={erddapUrl?.replace('deep_sea_corals.html', 'deep_sea_corals.csvp')} target="_blank" >Download</Button>
         </Tooltip>
       </div>
+      <div style={{display:"flex", justifyContent: "center", alignItems: "center"}}>
+        <Tooltip placement="top" title="Download the entire database in a CSV format">
+          <Button type="primary" tag="a" href={CSVfileUrl} target="_blank" style={{marginTop: "20px"}}>Download Entire Database</Button>
+        </Tooltip>
+      </div>
+
       <div style={{margin: '20px'}}>
         <span>ERDDAP may take a few minutes to respond to your request</span>
       </div>
