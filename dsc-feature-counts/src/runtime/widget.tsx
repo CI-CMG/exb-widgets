@@ -26,7 +26,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
 
   async function countSamples(extent:Extent) {
-    console.log('dsc-feature-counts. inside countSamples. whereClause =  ', whereClause)
+    // console.log('dsc-feature-counts. inside countSamples. whereClause =  ', whereClause)
     const searchParams = new URLSearchParams([
       ['where', whereClause],
       ['geometry', JSON.stringify(extent)],
@@ -267,7 +267,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       <JimuMapViewComponent 
         useMapWidgetId={props.useMapWidgetIds?.[0]} 
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
-      <div style={{paddingLeft: '5px'}}>Number of Samples: {sampleCount}</div>
+      <div style={{paddingLeft: '5px'}}>Number of Records: {sampleCount}</div>
       <br/>
       <div style={{paddingLeft: '5px'}}>
           <Label style={{ cursor: 'pointer' }}>
