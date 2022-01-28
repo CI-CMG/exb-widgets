@@ -18,13 +18,14 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   // const [showValues, setShowValues] = useState(false)
   // useRef instead?
   const [isStationary, setIsStationary] = useState(true)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [definitionExpression, setDefinitionExpression] = useState()
   const [pointLayer, setPointLayer] = useState(null)
   const [densityLayer, setDensityLayer] = useState(null)
   let stationaryWatch
   let extentWatch
   let sqlWatch
-
+  let updatingWatch
 
   // fires only once, when widget initially opened
   useEffect(() => {
@@ -44,28 +45,26 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         sqlWatch.remove()
         sqlWatch = null
       }
-
-    }
-  }, [])
-
-
-  function getQuery(): SqlQueryParams {
-    if (props.sqlString) {
-      return {
-        where: props.sqlString
+      if (updatingWatch) {
+        updatingWatch.remove()
+        updatingWatch = null
       }
     }
-    return null
-  }
-
+  }, [])
 
   useEffect(() => {
     if (!extent) {
       // no need to proceed w/o extent
       return
     }
+
     if (! isStationary) {
       // view being updated
+      return
+    }
+
+    if (isUpdating) {
+      // map being redrawn
       return
     }
 
@@ -78,6 +77,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       console.error("point layer not found")
       return
     }
+
     if (!densityLayer) {
       console.error("density layer not found")
       return
@@ -85,6 +85,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     
     if (definitionExpression && definitionExpression != '(1=1)') {
       pointLayer.visible = true
+      // pointLayer.refresh()
       densityLayer.visible = false
     } else if (view.zoom > props.config.zoomLevelToggle) {
       pointLayer.visible = true
@@ -131,11 +132,18 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       });
     }
 
+    if (!updatingWatch) {
+      updatingWatch = jmv.view.watch('updating', (newStatus, oldStatus) => {
+        // console.log(`updating changed from ${oldStatus} to ${newStatus}...`)
+        // setIsUpdating(newStatus)
+      })
+    }
+
     if (!sqlWatch) {
       const layer = jmv.view.map.layers.find(lyr => lyr.title === props.config.pointLayerTitle)
       setDefinitionExpression(layer.definitionExpression)
       sqlWatch = layer.watch('definitionExpression', (newExpression, oldExpression) => {
-        console.log('definitionExpression changed from '+oldExpression+' to '+newExpression)
+        // console.log('definitionExpression changed from '+oldExpression+' to '+newExpression)
         setDefinitionExpression(newExpression)
       });
     }
