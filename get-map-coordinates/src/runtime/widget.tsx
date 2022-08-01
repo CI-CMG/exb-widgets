@@ -69,7 +69,7 @@ export default function (props: AllWidgetProps<IMConfig>) {
 
   sections.push(
     <span>
-      {defaultMessages.latLon} {latitude} {longitude}
+      {defaultMessages.latLon} {latitude}, {longitude}
     </span>
   );
 
