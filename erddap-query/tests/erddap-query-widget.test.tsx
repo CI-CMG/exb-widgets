@@ -1,5 +1,5 @@
-import { React } from 'jimu-core'
-import _Widget from '../src/runtime/widget'
+// import { React } from 'jimu-core'
+// import _Widget from '../src/runtime/widget'
 
 describe('test erddap-query widget', () => {
   it('placeholder test', () => {
