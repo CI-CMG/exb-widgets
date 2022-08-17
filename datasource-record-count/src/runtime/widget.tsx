@@ -1,16 +1,13 @@
 /** @jsx jsx */
-import { 
-  AllWidgetProps, 
-  jsx, 
-  DataSourceComponent, 
-  SqlQueryParams, 
-  QueriableDataSource, 
-  DataSource 
+import {
+  AllWidgetProps,
+  jsx,
+  DataSourceComponent,
+  QueriableDataSource,
+  DataSource
 } from 'jimu-core'
-import defaultMessages from './translations/default'
-import { Button, defaultMessages as jimuUIMessages } from 'jimu-ui'
-import { useState, useEffect } from 'react';
-import { IMConfig } from '../config';
+import { useState, useEffect } from 'react'
+import { IMConfig } from '../config'
 
 export default function (props: AllWidgetProps<IMConfig>) {
   const [totalRecordCount, setTotalRecordCount] = useState(null)
@@ -19,10 +16,11 @@ export default function (props: AllWidgetProps<IMConfig>) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [updateQueued, setUpdateQueued] = useState(false)
   const updateNow = props.stateProps?.updateCount
-  
+  console.log('re-rendering. updateNow: ', updateNow)
+
   // any change in the props should cause widget to re-render and this useEffect to run
   useEffect(() => {
-    // console.log('datasource-record-count: updateNow changed', updateNow)
+    console.log('datasource-record-count: updateNow changed', updateNow)
     if (updateNow && isUpdating) {
       // console.log('datasource-record-count: update in progress, queuing refresh...')
       setUpdateQueued(true)
@@ -31,9 +29,8 @@ export default function (props: AllWidgetProps<IMConfig>) {
 
     if (updateNow) {
       updateRecordCount()
-    }  
+    }
   }, [updateNow])
-
 
   // should only fire twice, once when component mounted and once when DataSource is loaded
   useEffect(() => {
@@ -41,25 +38,22 @@ export default function (props: AllWidgetProps<IMConfig>) {
     if (!dataSource) { return }
 
     if (!isUpdating) {
-      updateRecordCount() 
+      updateRecordCount()
     } else {
-      console.warn('datasource-record-count: update already in progress')
+      // console.warn('datasource-record-count: update already in progress')
     }
   }, [dataSource])
 
-
-  useEffect(()=> {
+  useEffect(() => {
     if (!isUpdating && updateQueued) {
-      // console.log('datasource-record-count: no updates in progress, refreshing count...')
+      console.log('datasource-record-count: no updates in progress, refreshing count...')
       setUpdateQueued(false)
       updateRecordCount()
     }
-
   }, [isUpdating])
 
-
   // runs once
-  function onDataSourceCreated(ds: DataSource) {
+  function onDataSourceCreated (ds: DataSource) {
     if (ds) {
       const qds = ds as QueriableDataSource
       setDataSource(qds)
@@ -69,9 +63,8 @@ export default function (props: AllWidgetProps<IMConfig>) {
     }
   }
 
-  
-  async function countAllSamples(dataSource:DataSource) {
-    if (! dataSource) {
+  async function countAllSamples (dataSource: DataSource) {
+    if (!dataSource) {
       // TODO better to throw Exception?
       console.error('cannot get the Feature Service URL without the DataSource')
       return
@@ -81,22 +74,20 @@ export default function (props: AllWidgetProps<IMConfig>) {
       ['returnCountOnly', 'true'],
       ['f', 'json']
     ])
-    const response = await fetch(dataSource.url+'/query', {
-        method: 'POST',
-        body: searchParams
-    });
+    const response = await fetch(dataSource.url + '/query', {
+      method: 'POST',
+      body: searchParams
+    })
+    console.log(response)
     if (!response.ok) {
-        console.error("Error fetching data from: " + dataSource.url)
-        return
-    } else {
-      console.log('failed to count records from '+dataSource.url)
+      console.log('failed to count total records from ' + dataSource.url)
+      return
     }
-    const json = await response.json();
+    const json = await response.json()
     setTotalRecordCount(json.count)
   }
 
-
-  async function updateRecordCount() {
+  async function updateRecordCount () {
     if (isUpdating) {
       console.warn('datasource-record-count: should not be attempting update while another is still running')
     }
@@ -110,18 +101,17 @@ export default function (props: AllWidgetProps<IMConfig>) {
     setRecordCount(count)
   }
 
-
   // console.log('recordCount: ', recordCount)
   // console.log('isUpdating: ', isUpdating)
-  return( 
+  return (
     <div className="widget-demo jimu-widget m-2">
       <DataSourceComponent
           useDataSource={props.useDataSources?.[0]}
           widgetId={props.id}
           onDataSourceCreated={onDataSourceCreated}
         />
-      Filtered records: <span>{(recordCount != null && !isUpdating)?recordCount.toLocaleString("en-US") : 'updating...'}</span>
-      <span>{(!isUpdating && totalRecordCount)? ' out of ' + totalRecordCount.toLocaleString('en-US'): ''}</span> 
+      Filtered records: <span>{(recordCount != null && !isUpdating) ? recordCount.toLocaleString('en-US') : 'updating...'}</span>
+      <span>{(!isUpdating && totalRecordCount) ? ' out of ' + totalRecordCount.toLocaleString('en-US') : ''}</span>
       <br/>
     </div>
   )
