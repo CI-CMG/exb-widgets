@@ -1,12 +1,17 @@
 import Extent from 'esri/geometry/Extent';
 import {AbstractMessageAction, MessageType, Message, getAppStore, appActions, IMSqlExpression,
   DataRecordSetChangeMessage, DataRecordsSelectionChangeMessage, DataSourceFilterChangeMessage, 
-  ExtentChangeMessage, StringSelectionChangeMessage,
+  ExtentChangeMessage, StringSelectionChangeMessage, MessageDescription,
   DataSourceManager,QueriableDataSource, SqlQueryParams, QueryParams, SelectDataRecordMessage} from 'jimu-core';
 
 export default class FilterAction extends AbstractMessageAction {
   extentString:string = null
   queryString:string = '1=1'
+
+  filterMessageDescription (messageDescription: MessageDescription): boolean {
+    console.log('inside filterMessageDescription with ', messageDescription)
+    return true
+  }
 
   filterMessageType(messageType: MessageType, messageWidgetId?: string): boolean {
     return [
