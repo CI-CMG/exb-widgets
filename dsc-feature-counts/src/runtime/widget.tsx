@@ -1,15 +1,14 @@
 /** @jsx jsx */
-import { AllWidgetProps, jsx, IMState, SqlQueryParams } from "jimu-core";
-import { useState, useEffect } from 'react';
-import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
-import { Label, Radio, defaultMessages as jimuUIMessages } from 'jimu-ui';
-import Extent from "esri/geometry/Extent";
-import { IMConfig } from '../config';
+import { AllWidgetProps, jsx, IMState, SqlQueryParams } from 'jimu-core'
+import { useState, useEffect } from 'react'
+import { JimuMapView, JimuMapViewComponent } from 'jimu-arcgis'
+import { Label, Radio } from 'jimu-ui'
+import Extent from 'esri/geometry/Extent'
+import { IMConfig } from '../config'
 
 interface ExtraProps {
   sqlString: any
 }
-
 
 export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   const [extent, setExtent] = useState()
@@ -24,7 +23,6 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
   let extentWatch
   const featureServiceUrl = 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/Deep_Sea_Coral_Samples/FeatureServer/0/query'
 
-
   async function countSamples(extent:Extent) {
     // console.log('dsc-feature-counts. inside countSamples. whereClause =  ', whereClause)
     const searchParams = new URLSearchParams([
@@ -37,19 +35,18 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       ['f', 'json']
     ])
     const response = await fetch(featureServiceUrl, {
-        method: 'POST',
-        body: searchParams
-    });
+      method: 'POST',
+      body: searchParams
+    })
     if (!response.ok) {
-        console.warn("dsc-feature-counts. Error fetching data from: " + featureServiceUrl)
-        return
+      console.warn('dsc-feature-counts. Error fetching data from: ' + featureServiceUrl)
+      return
     }
-    const json = await response.json();
+    const json = await response.json()
     setSampleCount(json.count)
   }
 
-
-  async function sampleStatistics(extent:Extent, fieldname='VernacularNameCategory') {  
+  async function sampleStatistics (extent: Extent, fieldname = 'VernacularNameCategory') {
     const outStatistics = `[{"statisticType":"count","onStatisticField":"${fieldname}","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
       ['where', whereClause],
@@ -63,14 +60,14 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       ['f', 'json']
     ])
     const response = await fetch(featureServiceUrl, {
-        method: 'POST',
-        body: searchParams
-    });
+      method: 'POST',
+      body: searchParams
+    })
     if (!response.ok) {
-        console.warn("Error fetching data from: " + featureServiceUrl)
-        return
+      console.warn('Error fetching data from: ' + featureServiceUrl)
+      return
     }
-    const json = await response.json();
+    const json = await response.json()
     // console.log(json)
     const stats = json.features.map(item => [item.attributes.VernacularNameCategory, item.attributes.Count])
     // sort by count, descending
@@ -79,8 +76,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     setIsProcessing(false)
   }
 
-
-  async function statisticsByScientificName(extent:Extent, fieldname='ScientificName') {  
+  async function statisticsByScientificName (extent: Extent, fieldname = 'ScientificName') {
     const outStatistics = `[{"statisticType":"count","onStatisticField":"OBJECTID","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
       ['where', whereClause],
@@ -94,12 +90,12 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       ['f', 'json']
     ])
     const response = await fetch(featureServiceUrl, {
-        method: 'POST',
-        body: searchParams
-    });
+      method: 'POST',
+      body: searchParams
+    })
     if (!response.ok) {
-        console.warn("Error fetching data from: " + featureServiceUrl)
-        return
+      console.warn('Error fetching data from: ' + featureServiceUrl)
+      return
     }
     const json = await response.json();
     const stats = json.features.map(item => [item.attributes.ScientificName, item.attributes.Count])
@@ -109,8 +105,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     setIsProcessing(false)
   }
 
-
-  async function statisticsByTaxon(extent:Extent) {  
+  async function statisticsByTaxon (extent: Extent) {
     const outStatistics = `[{"statisticType":"count","onStatisticField":"ObjectId","outStatisticFieldName":"Count"}]`
     const searchParams = new URLSearchParams([
       ['where', whereClause],
@@ -118,33 +113,36 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       ['geometryType', 'esriGeometryEnvelope'],
       ['spatialRel', 'esriSpatialRelIntersects'],
       ['returnGeometry', 'false'],
-      ['groupByFieldsForStatistics', "Phylum,Order_,Family"],
+      ['groupByFieldsForStatistics', 'Phylum,Class,Order_,Family'],
       ['outStatistics', outStatistics],
       ['f', 'json']
     ])
     // MapService contains TAXON fields but hosted Feature Layer does not
     const response = await fetch(featureServiceUrl, {
-        method: 'POST',
-        body: searchParams
-    });
+      method: 'POST',
+      body: searchParams
+    })
     if (!response.ok) {
-        console.warn("Error fetching data from: " + featureServiceUrl)
-        return
+      console.warn('Error fetching data from: ' + featureServiceUrl)
+      return
     }
-    const json = await response.json();
+    const json = await response.json()
 
     // put the NA values back in blank fields
     json.features.forEach(it => {
-      if(!it.attributes.Phylum) { it.attributes.Phylum = 'NA'}
-      if(!it.attributes.Order_) { it.attributes.Order_ = 'NA'}
-      if(!it.attributes.Family) { it.attributes.Family = 'NA'}
-      if(!it.attributes.Genus) { it.attributes.Genus = 'NA'}
+      if (!it.attributes.Phylum) { it.attributes.Phylum = 'NA' }
+      if (!it.attributes.Class) { it.attributes.Class = 'NA' }
+      if (!it.attributes.Order_) { it.attributes.Order_ = 'NA' }
+      if (!it.attributes.Family) { it.attributes.Family = 'NA' }
+      if (!it.attributes.Genus) { it.attributes.Genus = 'NA' }
     })
     const stats = json.features.map(item => [
-      [ item.attributes.Phylum, 
-        item.attributes.Order_=='NA'?'':item.attributes.Order_, 
-        item.attributes.Family=='NA'?'':item.attributes.Family
-      ].join(' '), 
+      [
+        item.attributes.Phylum,
+        item.attributes.Class === 'NA' ? '' : item.attributes.Class,
+        item.attributes.Order_ === 'NA' ? '' : item.attributes.Order_,
+        item.attributes.Family === 'NA' ? '' : item.attributes.Family
+      ].join(' '),
       item.attributes.Count
     ])
     // sort by count, descending
@@ -155,10 +153,9 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
 
   // fires only once, when widget initially opened
   useEffect(() => {
-
     // one-time cleanup function
     return function cleanup() {
-      // remove at time componment is destroyed 
+      // remove at time componment is destroyed
       if (extentWatch) {
         extentWatch.remove()
         extentWatch = null
@@ -190,12 +187,10 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     */
   }
 
-
   // runs with each re-render
   useEffect(() => {
     setWhereClause(getQuery().where)
   })
-
 
   // TODO could separate out total sample count into a separate useEffect 
   // block since it doesn't need to update with radio button change
@@ -204,7 +199,7 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
       // no need to proceed w/o extent
       return
     }
-    if (! isStationary) {
+    if (!isStationary) {
       // view being updated
       return
     }
@@ -224,10 +219,9 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     }
   }, [extent, isStationary, summaryField, whereClause])
 
-
   // only called when widget first opened
   const activeViewChangeHandler = (jmv: JimuMapView) => {
-    if (! jmv) {
+    if (!jmv) {
       console.warn('no mapview')
       return
     }
@@ -252,24 +246,22 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
     if (!stationaryWatch) {
       stationaryWatch = jmv.view.watch('stationary', stationary => {
         setIsStationary(stationary)
-      });
+      })
     }
-  };
+  }
 
-
-  function onRadioButtonChange(e) {
+  function onRadioButtonChange (e) {
     setSummaryField(e.target.value)
   }
 
-
   return (
     <div className="widget-use-map-view" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <JimuMapViewComponent 
-        useMapWidgetId={props.useMapWidgetIds?.[0]} 
+      <JimuMapViewComponent
+        useMapWidgetId={props.useMapWidgetIds?.[0]}
         onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
-      <div style={{paddingLeft: '5px'}}>Number of Records: {sampleCount}</div>
+      <div style={{ paddingLeft: '5px' }}>Number of Records: {sampleCount}</div>
       <br/>
-      <div style={{paddingLeft: '5px'}}>
+      <div style={{ paddingLeft: '5px' }}>
           <Label style={{ cursor: 'pointer' }}>
             <Radio
               style={{ cursor: 'pointer' }} value='VernacularNameCategory' checked={summaryField === 'VernacularNameCategory'} onChange={onRadioButtonChange}
@@ -287,9 +279,9 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
           </Label>
 
       </div>
-      <div style={{overflowY: 'auto', height: '100%', paddingLeft: '5px'}}>
-        <span style={{display: (isProcessing? 'inline': 'none')}}>processing...</span>
-        <table style={{visibility: (isProcessing? 'hidden': 'visible')}}>
+      <div style={{ overflowY: 'auto', height: '100%', paddingLeft: '5px'}}>
+        <span style={{ display: (isProcessing ? 'inline' : 'none') }}>processing...</span>
+        <table style={{ visibility: (isProcessing ? 'hidden' : 'visible') }}>
           <thead><th>Name</th><th>Count</th></thead>
           <tbody>
             {stats.map(row => <tr key={row[0]}><td>{row[0]}</td><td>{row[1]}</td></tr>)}
@@ -297,16 +289,16 @@ export default function Widget (props: AllWidgetProps<IMConfig> & ExtraProps) {
         </table>
       </div>
     </div>
-  );
+  )
 }
 
 // this runs a lot, even when widget is not re-rendered
 Widget.mapExtraStateProps = (state: IMState, ownProps: AllWidgetProps<IMConfig>): ExtraProps => {
-  let wId: string;
+  let wId: string
   for (const [key, value] of Object.entries(state.widgetsState)) {
     // console.log(`widget ${key}: ` , value)
-    if(value['sqlString']){
-      wId = key;
+    if (value.sqlString) {
+      wId = key
     }
   }
   return {
