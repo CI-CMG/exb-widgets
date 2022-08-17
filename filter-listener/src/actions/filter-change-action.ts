@@ -2,6 +2,11 @@ import {AbstractMessageAction, MessageType, Message, getAppStore, appActions, IM
     DataSourceFilterChangeMessage, DataSourceManager,QueriableDataSource, SqlQueryParams, QueryParams} from 'jimu-core';
 
 export default class FilterAction extends AbstractMessageAction{
+  filterMessageDescription (messageDescription: MessageDescription): boolean {
+    console.log('inside filterMessageDescription with ', messageDescription)
+    return true
+  }
+
   filterMessageType(messageType: MessageType, messageWidgetId?: string): boolean{
     return [MessageType.DataSourceFilterChange].indexOf(messageType) > -1;
   }
