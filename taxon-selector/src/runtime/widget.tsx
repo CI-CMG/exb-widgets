@@ -1,32 +1,39 @@
 /** @jsx jsx */
 import { AllWidgetProps, jsx, DataSourceComponent, SqlQueryParams, QueriableDataSource, DataSource, MessageManager, DataSourceFilterChangeMessage } from "jimu-core"
-import { useState, useEffect } from 'react';
-import { JimuMapView, JimuMapViewComponent } from "jimu-arcgis";
-import { Select, Option, Button, defaultMessages as jimuUIMessages } from 'jimu-ui';
-import { IMConfig } from '../config';
-
+import React, { useState, useEffect } from 'react'
+import { JimuMapView, JimuMapViewComponent } from 'jimu-arcgis'
+import { Select, Option, Button, defaultMessages as jimuUIMessages } from 'jimu-ui'
+import { IMConfig } from '../config'
 
 export default function Widget (props: AllWidgetProps<IMConfig>) {
   const [dataSource, setDataSource] = useState(null)
   const [view, setView] = useState(null)
-  const [phylums, setPhylums] = useState(new Map())
-  const [orders, setOrders] = useState(new Map())
-  const [families, setFamilies] = useState(new Map())
-  const [selectedPhylum, setSelectedPhylum] = useState()
-  const [selectedOrder, setSelectedOrder] = useState()
-  const [selectedFamily, setSelectedFamily] = useState()
-  const [selectedGenus, setSelectedGenus] = useState()
-  const mapServiceUrl = 'https://gis.ngdc.noaa.gov/arcgis/rest/services/DSCRTP/MapServer/0/query?'
+  const [phylumList, setPhylumList] = useState<string[]>([])
+  const [classList, setClassList] = useState<string[]>([])
+  const [orderList, setOrderList] = useState<string[]>([])
+  const [familyList, setFamilyList] = useState<string[]>([])
+  const [genusList, setGenusList] = useState<string[]>([])
+  const [selectedPhylum, setSelectedPhylum] = useState<string|undefined>()
+  const [selectedClass, setSelectedClass] = useState<string|undefined>()
+  const [selectedOrder, setSelectedOrder] = useState<string|undefined>()
+  const [selectedFamily, setSelectedFamily] = useState<string|undefined>()
+  const [selectedGenus, setSelectedGenus] = useState<string|undefined>()
+  const featureServiceUrl = 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/ArcGIS/rest/services/DSCRTP_NatDB_FeatureLayer/FeatureServer/0/query?'
+  //TODO read from configuration
+  // const serviceUrl = (props.config.serviceUrl) ? props.config.serviceUrl : 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/ArcGIS/rest/services/DSCRTP_NatDB_FeatureLayer/FeatureServer/0/query?'
 
   // handle changes to taxon selections. update map and publish new values
   useEffect(() => {
-    if (!dataSource || ! view) {
-      console.warn("DataSource and/or MapView not yet set. QueryParams cannot updated")
+    console.log('inside useEffect watching selected taxon...')
+    console.log('phylum: ' + selectedPhylum + '; class: ' + selectedClass + '; order: ' + selectedOrder + '; genus: ' + selectedGenus)
+    if (!dataSource || !view) {
+      console.warn('DataSource and/or MapView not yet set. QueryParams cannot updated')
       return
     }
 
-    let selectedTaxon = []
+    const selectedTaxon = []
     if (selectedPhylum) { selectedTaxon.push(selectedPhylum) }
+    if (selectedClass) { selectedTaxon.push(selectedClass) }
     if (selectedFamily) { selectedTaxon.push(selectedFamily) }
     if (selectedOrder) { selectedTaxon.push(selectedOrder) }
     if (selectedGenus) { selectedTaxon.push(selectedGenus) }
@@ -34,189 +41,169 @@ export default function Widget (props: AllWidgetProps<IMConfig>) {
     const q = getQuery();
     (dataSource as QueriableDataSource).updateQueryParams(q, props.id)
     sendMessage()
-  }, [selectedPhylum, selectedFamily, selectedOrder, selectedGenus])
+  }, [selectedPhylum, selectedClass, selectedFamily, selectedOrder, selectedGenus])
 
   // run once when widget is loaded
   useEffect(() => {
-    // getTaxonData()
-    getTaxonDataFromFeatureService()
+    // list of phylums does not change
+    updatePhylumList()
+  }, [])
 
-    // one-time cleanup function. remove watches at time componment is destroyed 
-    // return function cleanup() {
-    //   if (sqlWatch) {
-    //     sqlWatch.remove()
-    //     sqlWatch = null
-    //   }
-    // }
-  },[])
+  async function getDataFromFeatureService (incomingSearchParams: URLSearchParams) {
+    //clone incoming
+    const searchParams = new URLSearchParams(incomingSearchParams)
+    // params shared be every request
+    searchParams.set('returnGeometry', 'false')
+    searchParams.set('returnDistinctValues', 'true')
+    searchParams.set('f', 'json')
+    const response = await fetch(featureServiceUrl, {
+      method: 'POST',
+      body: searchParams
+    })
+    //TODO better error handling
+    if (!response.ok) {
+      console.warn('Error fetching Taxon data from: ' + featureServiceUrl)
+      return
+    }
+    return await response.json()
+  }
 
-
-  async function getTaxonData() {
+  async function updatePhylumList () {
     const startTime = new Date()
     const searchParams = new URLSearchParams([
       ['where', '1=1'],
-      ['outFields', 'TAXONPHYLUM,TAXONORDER,TAXONFAMILY,TAXONGENUS'],
-      ['orderByFields', 'TAXONPHYLUM,TAXONORDER,TAXONFAMILY,TAXONGENUS'],
-      ['groupByFieldsForStatistics', 'TAXONPHYLUM,TAXONORDER,TAXONFAMILY,TAXONGENUS'],
-      ['returnGeometry', 'false'],
-      ['returnDistinctValues', 'true'],
-      ['f', 'json']
+      ['outFields', 'Phylum']
     ])
-    // TAXON are only included in on-prem map service
-    const response = await fetch(mapServiceUrl, {
-        method: 'POST',
-        body: searchParams
-    });
-    if (!response.ok) {
-        console.warn("Error fetching Taxon data from: " + mapServiceUrl)
-        return
-    }
-    const data = await response.json();
-
-    // lists of Order values for each phylum
-    const phylumMap = new Map()
-    const phylumList = Array.from(new Set(data.features.map(it => it.attributes.TAXONPHYLUM)))
-    phylumList.forEach((phylum) => {
-        const orderList = Array.from(new Set(data.features.filter(it => it.attributes.TAXONPHYLUM === phylum).map(it => it.attributes.TAXONORDER)))
-        phylumMap.set(phylum, orderList)
-    })
-    setPhylums(phylumMap)
-
-    // lists of Family values for each Order
-    const orderMap = new Map()
-    const orderList = Array.from(new Set(data.features.map(it => it.attributes.TAXONORDER)))
-    orderList.forEach((order) => {
-        const familyList = Array.from(new Set(data.features.filter(it => it.attributes.TAXONORDER === order).map(it => it.attributes.TAXONFAMILY)))
-        orderMap.set(order, familyList)
-    })
-    setOrders(orderMap)
-
-    // lists of Genus values for each Family
-    const familyMap = new Map()
-    const familyList = Array.from(new Set(data.features.map(it => it.attributes.TAXONFAMILY)))
-    familyList.forEach((family) => {
-        const genusList = Array.from(new Set(data.features.filter(it => it.attributes.TAXONFAMILY === family).map(it => it.attributes.TAXONGENUS)))
-        familyMap.set(family, genusList)
-    })
-    setFamilies(familyMap)
-
+    const data = await getDataFromFeatureService(searchParams)
+    const phylums = data.features.map(feature => feature.attributes.Phylum).map(name => name || 'NA')
+    setPhylumList(phylums)
     const endTime = new Date()
-    console.info(`Taxon data loaded from MapService in ${(endTime.getTime()-startTime.getTime())/1000} seconds`)
+    console.debug(`Phylum data loaded from FeatureService in ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`)
   }
-    
 
-
-  async function getTaxonDataFromFeatureService() {
-    const startTime = new Date()
-    const serviceUrl = (props.config.serviceUrl)? props.config.serviceUrl : 'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/ArcGIS/rest/services/Deep_Sea_Coral_Samples/FeatureServer/0/query?'
+  async function updateClassList (phylumName: string) {
     const searchParams = new URLSearchParams([
-      ['where', '1=1'],
-      ['outFields', 'Phylum,Order_,Family,Genus'],
-      ['orderByFields', 'Phylum,Order_,Family,Genus'],
-      ['groupByFieldsForStatistics', 'Phylum,Order_,Family,Genus'],
-      ['returnGeometry', 'false'],
-      ['returnDistinctValues', 'true'],
-      ['f', 'json']
+      ['where', `Phylum='${phylumName}'`],
+      ['outFields', 'Class']
     ])
-    const response = await fetch(serviceUrl, {
-        method: 'POST',
-        body: searchParams
-    });
-    if (!response.ok) {
-        console.warn("Error fetching Taxon data from: " + serviceUrl)
-        return
-    }
-    const data = await response.json();
-    data.features.forEach(it => {
-      if(!it.attributes.Phylum) { it.attributes.Phylum = 'NA'}
-      if(!it.attributes.Order_) { it.attributes.Order_ = 'NA'}
-      if(!it.attributes.Family) { it.attributes.Family = 'NA'}
-      if(!it.attributes.Genus) { it.attributes.Genus = 'NA'}
-    })
-
-    // lists of Order values for each phylum
-    const phylumMap = new Map()
-    const phylumList = Array.from(new Set(data.features.map(it => it.attributes.Phylum)))
-    phylumList.forEach((phylum) => {
-        const orderList = Array.from(new Set(data.features.filter(it => it.attributes.Phylum === phylum).map(it => it.attributes.Order_)))
-        phylumMap.set(phylum, orderList)
-    })
-    setPhylums(phylumMap)
-
-    // lists of Family values for each Order
-    const orderMap = new Map()
-    const orderList = Array.from(new Set(data.features.map(it => it.attributes.Order_)))
-    orderList.forEach((order) => {
-        const familyList = Array.from(new Set(data.features.filter(it => it.attributes.Order_ === order).map(it => it.attributes.Family)))
-        orderMap.set(order, familyList)
-    })
-    setOrders(orderMap)
-
-    // lists of Genus values for each Family
-    const familyMap = new Map()
-    const familyList = Array.from(new Set(data.features.map(it => it.attributes.Family)))
-    familyList.forEach((family) => {
-        const genusList = Array.from(new Set(data.features.filter(it => it.attributes.Family === family).map(it => it.attributes.Genus)))
-        familyMap.set(family, genusList)
-    })
-    setFamilies(familyMap)
-    const endTime = new Date()
-    console.info(`Taxon data loaded from FeatureService in ${(endTime.getTime()-startTime.getTime())/1000} seconds`)
+    const data = await getDataFromFeatureService(searchParams)
+    const classes = data.features.map(feature => feature.attributes.Class).map(name => name || 'NA')
+    setClassList(classes)
   }
 
+  // 'Order' is reserved word in SQL so renamed to 'Order_ in FeatureService'
+  async function updateOrderList (className: string) {
+    const searchParams = new URLSearchParams([
+      ['where', `Class='${className}'`],
+      ['outFields', 'Order_']
+    ])
+    const data = await getDataFromFeatureService(searchParams)
+    const orders = data.features.map(feature => feature.attributes.Order_).map(name => name || 'NA')
+    setOrderList(orders)
+  }
+
+  async function updateFamilyList (orderName: string) {
+    const searchParams = new URLSearchParams([
+      ['where', `Order_='${orderName}'`],
+      ['outFields', 'Family']
+    ])
+    const data = await getDataFromFeatureService(searchParams)
+    const families = data.features.map(feature => feature.attributes.Family).map(name => name || 'NA')
+    setFamilyList(families)
+  }
+
+  async function updateGenusList (familyName: string) {
+    const searchParams = new URLSearchParams([
+      ['where', `Family='${familyName}'`],
+      ['outFields', 'Genus']
+    ])
+    const data = await getDataFromFeatureService(searchParams)
+    const genera = data.features.map(feature => feature.attributes.Genus).map(name => name || 'NA')
+    console.log('genus list: ', genera)
+    setGenusList(genera)
+  }
 
   /**
    * construct SQL clause based on taxon selections
    * Note that other filter criteria are managed independently by the Filter widget
    */
-  function getQuery(): SqlQueryParams {
-    let clauses = []
+  function getQuery (): SqlQueryParams {
+    const clauses = []
 
     // Feature Layer used different column names than map service
     if (selectedPhylum) { clauses.push(`Phylum = '${selectedPhylum}'`) }
+    if (selectedClass) { clauses.push(`Class = '${selectedClass}'`) }
     if (selectedFamily) { clauses.push(`Family = '${selectedFamily}'`) }
     // Order is a SQL reserved word
     if (selectedOrder) { clauses.push(`Order_ = '${selectedOrder}'`) }
     if (selectedGenus) { clauses.push(`Genus = '${selectedGenus}'`) }
-    
+
     if (clauses?.length) {
-      return({where: clauses.join(' AND ')})
+      return ({ where: clauses.join(' AND ') })
     } else {
       return null
-    }    
+    }
   }
 
-
-  function resetButtonHandler(e) {
+  function resetButtonHandler (evt: React.MouseEvent<HTMLButtonElement>) {
     if (selectedPhylum) { setSelectedPhylum(null) }
+    if (selectedClass) { setSelectedClass(null) }
     if (selectedOrder) { setSelectedOrder(null) }
     if (selectedFamily) { setSelectedFamily(null) }
     if (selectedGenus) { setSelectedGenus(null) }
   }
 
+  // changing phylum resets all other Select elements in hierarchy
+  function phylumSelectHandler (evt: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedPhylum(evt.target.value)
+    updateClassList(evt.target.value)
 
-  function phylumSelectHandler(e) {
-    setSelectedPhylum(e.target.value)
+    // reset dependent values
+    setSelectedClass(undefined)
+    setSelectedOrder(undefined)
+    setSelectedFamily(undefined)
+    setSelectedGenus(undefined)
+    setOrderList([])
+    setFamilyList([])
+    setGenusList([])
   }
 
+  function classSelectHandler (evt: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedClass(evt.target.value)
+    updateOrderList(evt.target.value)
 
-  function orderSelectHandler(e) {
-    setSelectedOrder(e.target.value)
+    // reset dependent values
+    setSelectedOrder(undefined)
+    setSelectedFamily(undefined)
+    setSelectedGenus(undefined)
+    setFamilyList([])
+    setGenusList([])
   }
 
+  function orderSelectHandler (evt: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedOrder(evt.target.value)
+    updateFamilyList(evt.target.value)
 
-  function familySelectHandler(e) {
-    setSelectedFamily(e.target.value)
+    // reset dependent values
+    setSelectedFamily(undefined)
+    setSelectedGenus(undefined)
+    setGenusList([])
   }
 
+  function familySelectHandler (evt: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedFamily(evt.target.value)
+    updateGenusList(evt.target.value)
 
-  function genusSelectHandler(e) {
-    setSelectedGenus(e.target.value)
+    // reset dependent values
+    setSelectedGenus(undefined)
   }
 
+  function genusSelectHandler (evt: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedGenus(evt.target.value)
+  }
 
   // runs once
-  function onDataSourceCreated(ds: DataSource) {
+  function onDataSourceCreated (ds: DataSource) {
     if (ds) {
       const dataSource = ds as QueriableDataSource
       setDataSource(dataSource)
@@ -224,93 +211,84 @@ export default function Widget (props: AllWidgetProps<IMConfig>) {
       console.error('unable to create DataSource')
     }
   }
-  
-
-  function parseSql(sqlString:string) {
-    if (sqlString === '(1=1)' || !sqlString) {
-      return []
-    }
-    const regex = /(\([^\()]*\))/g;
-    const matches = sqlString.match(regex)
-    if (! matches.length) {
-      // shouldn't ever happen
-      console.error(`string ${sqlString} produced no matches`)
-      return
-    }
-    return(matches)
-  }
-
 
   // runs once
   const activeViewChangeHandler = (jmv: JimuMapView) => {
-    if (! jmv) {
+    if (!jmv) {
       console.warn('no MapView')
       return
     }
     setView(jmv.view)
   }
 
-
-  function sendMessage() {
-    MessageManager.getInstance().publishMessage(new DataSourceFilterChangeMessage(props.id, dataSource.id));
+  function sendMessage () {
+    MessageManager.getInstance().publishMessage(new DataSourceFilterChangeMessage(props.id, dataSource.id))
   }
 
-  
   return (
     <div className="" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
       <div>
-      <DataSourceComponent
-          useDataSource={props.useDataSources?.[0]}
-          widgetId={props.id}
-          onDataSourceCreated={onDataSourceCreated}
-        />
-      <JimuMapViewComponent 
-        useMapWidgetId={props.useMapWidgetIds?.[0]} 
-        onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
+        <DataSourceComponent
+            useDataSource={props.useDataSources?.[0]}
+            widgetId={props.id}
+            onDataSourceCreated={onDataSourceCreated}
+          />
+        <JimuMapViewComponent
+          useMapWidgetId={props.useMapWidgetIds?.[0]}
+          onActiveViewChange={activeViewChangeHandler}></JimuMapViewComponent>
 
-    </div>
-    <Select
+      </div>
+      <Select
         value={selectedPhylum}
         onChange={phylumSelectHandler}
         placeholder="Select a Phylum..."
-        style={{padding: '10px', width: 200}}
-        disabled={phylums.size < 1}
+        style={{ padding: '10px', width: 200 }}
+        disabled={!phylumList.length}
       >
-      {Array.from(phylums.keys()).map(item => <Option value={item}>{item}</Option>)}
-    </Select>
+        {phylumList?.map(item => <Option value={item}>{item}</Option>)}
+      </Select>
 
-    <Select
+      <Select
+        value={selectedClass}
+        onChange={classSelectHandler}
+        placeholder="Select a Class..."
+        style={{ padding: '10px', width: 200 }}
+        disabled={!selectedPhylum}
+      >
+        {classList.map(item => <Option value={item}>{item}</Option>)}
+      </Select>
+
+      <Select
         value={selectedOrder}
         onChange={orderSelectHandler}
         placeholder="Select an Order..."
-        style={{paddingLeft: '10px',  paddingBottom: '10px', width: 200}}
-        disabled={!selectedPhylum}
+        style={{ paddingLeft: '10px', paddingBottom: '10px', width: 200 }}
+        disabled={!selectedClass}
       >
-      {selectedPhylum && phylums.get(selectedPhylum)?.map(item => <Option value={item}>{item}</Option>)}
-    </Select>
+        {orderList.map(item => <Option value={item}>{item}</Option>)}
+      </Select>
 
-    <Select
+      <Select
         value={selectedFamily}
         onChange={familySelectHandler}
         placeholder="Select a Family..."
-        style={{paddingLeft: '10px',  paddingBottom: '10px', width: 200}}
+        style={{ paddingLeft: '10px', paddingBottom: '10px', width: 200 }}
         disabled={!selectedOrder}
       >
-      {selectedOrder && orders.get(selectedOrder)?.map(item => <Option value={item}>{item}</Option>)}
-    </Select>
+        {familyList.map(item => <Option value={item}>{item}</Option>)}
+      </Select>
 
-    <Select
+      <Select
         value={selectedGenus}
         onChange={genusSelectHandler}
         placeholder="Select a Genus..."
-        style={{paddingLeft: '10px', paddingBottom: '10px', width: 200}}
+        style={{ paddingLeft: '10px', paddingBottom: '10px', width: 200 }}
         disabled={!selectedFamily}
       >
-      {selectedFamily && families.get(selectedFamily)?.map(item => <Option value={item}>{item}</Option>)}
-    </Select>
+        {genusList.map(item => <Option value={item}>{item}</Option>)}
+      </Select>
 
-    <Button style={{margin: '10px'}} onClick={resetButtonHandler}>Reset</Button>
-        
+      <Button style={{ margin: '10px' }} onClick={resetButtonHandler}>Reset</Button>
     </div>
-  );
+  )
 }
