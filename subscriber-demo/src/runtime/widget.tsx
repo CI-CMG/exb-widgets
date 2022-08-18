@@ -3,8 +3,7 @@ import {
   AllWidgetProps,
   jsx,
   DataSourceComponent,
-  QueriableDataSource,
-  DataSource
+  QueriableDataSource
 } from 'jimu-core'
 import { JimuMapView, JimuMapViewComponent } from 'jimu-arcgis'
 // import defaultMessages from './translations/default'
@@ -17,10 +16,7 @@ export default function SubscriberDemo (props: AllWidgetProps<IMConfig>) {
   const [dataSource, setDataSource] = useState(null)
   const [view, setView] = useState(null)
 
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [updateQueued, setUpdateQueued] = useState(false)
   // const [lastMessage, setLastMessage] = useState<string>('')
-  // const updateNow = props.stateProps?.updateCount
   const lastMessage = props.stateProps?.lastMessage
   console.log('rendering SubscriberDemo. props: ', props)
 
@@ -84,6 +80,15 @@ export default function SubscriberDemo (props: AllWidgetProps<IMConfig>) {
         console.log('Extent changed')
       })
     }
+
+    // alternative to watching DataSource queryParams property?
+    if (!queryParamsWatchHandle) {
+      const layer = jmv.view.map.layers.find(lyr => lyr.title === 'Deep Sea Coral and Sponge Observations')
+      queryParamsWatchHandle = layer.watch('definitionExpression', (newExpression, oldExpression) => {
+        // TODO trigger some action
+        console.log('layerDefinition changed')
+      })
+    }
   }
 
   // fires only once, when widget initially opened
@@ -95,6 +100,9 @@ export default function SubscriberDemo (props: AllWidgetProps<IMConfig>) {
         extentWatchHandle.remove()
       }
       if (stationaryWatchHandle) {
+        stationaryWatchHandle.remove()
+      }
+      if (queryParamsWatchHandle) {
         stationaryWatchHandle.remove()
       }
     }
