@@ -6,21 +6,23 @@ import {
   appActions,
   MessageDescription,
   ExtentChangeMessage,
-  DataSourceFilterChangeMessage
+  DataSourceFilterChangeMessage,
+  LocationChangeMessage,
+  DataRecordsSelectionChangeMessage,
+  DataRecordSetChangeMessage
 } from 'jimu-core'
 import Extent from 'esri/geometry/Extent'
+import webMercatorUtils from 'esri/geometry/support/webMercatorUtils'
 
 export default class MessageHandlerAction extends AbstractMessageAction {
   // new in v1.9, replaces filterMessageDescription. used in builder
   filterMessageDescription (messageDescription: MessageDescription): boolean {
-    // console.log('MessageHandlerAction: inside filterMessageDescription with ', messageDescription)
+    // support any Message type
     return true
   }
 
   filterMessage (message: Message): boolean {
-    // console.log('MessageHandlerAction: inside filterMessage with ', message)
-
-    // any Message type
+    // support any Message type
     return true
   }
 
@@ -45,13 +47,33 @@ export default class MessageHandlerAction extends AbstractMessageAction {
         // trigger an update for the widget when Extent is different from previous. Must be a String?
         getAppStore().dispatch(appActions.widgetStatePropChange(this.widgetId, 'extent', this.formatExtent(extentChangeMessage.extent)))
         break
+
+      case MessageType.DataRecordSetChange:
+        console.log('MessageHandlerAction: got DataRecordSetChangeMessage', message, actionConfig)
+        const dataRecordSetChangeMessage = message as DataRecordSetChangeMessage
+        break
+
+      case MessageType.DataRecordsSelectionChange:
+        console.log('MessageHandlerAction: got DataRecordsSelectionChangeMessage', message, actionConfig)
+        const dataRecordsChangeMessage = message as DataRecordsSelectionChangeMessage
+        break
+
+      // TODO how to configure Map to issue LocationChangeMessage?
+      case MessageType.LocationChange:
+        console.log('MessageHandlerAction: got LocationChangeMessage', message, actionConfig)
+        const LocationChangeMessage = message as LocationChangeMessage
+        break
     }
 
     return true
   }
 
   formatExtent (extent: Extent): string {
-    if (!extent) { return '' }
+    if (!extent) { return 'extent not available' }
+    // VSCode does not recognize isLinear argument is optional and defaults to false
+    // TODO calling webMercatorToGeographic() causing "Load module error. TypeError: window.require is not a function"
+    // const geoExtent = webMercatorUtils.webMercatorToGeographic(extent, false) as Extent
+    // return `${geoExtent.xmin}, ${geoExtent.ymin}, ${geoExtent.xmax}, ${geoExtent.ymax}`
     return `${extent.xmin}, ${extent.ymin}, ${extent.xmax}, ${extent.ymax}`
   }
 }
