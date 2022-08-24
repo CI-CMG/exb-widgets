@@ -1,2 +1,0 @@
-# layer-listener widget
-toggles the visibility of the binned density layer and the point layer. Either the density layer or the point features layer should be visible at any given time. When scale increases past a set threshold the density layer will turn off and the point layer will turned on. However, if any filter is applied the density layer will be turned off and the point layer activated regardless of scale.
