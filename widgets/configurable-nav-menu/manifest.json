@@ -1,0 +1,18 @@
+{
+  "name": "configurable-nav-menu",
+  "type": "widget",
+  "version": "1.0.0",
+  "exbVersion": "1.6.0",
+  "author": "John Cartwright",
+  "description": "simple nav menu which reads its options from configured URL",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 400,
+    "height": 400
+  }
+}

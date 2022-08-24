@@ -1,0 +1,27 @@
+{
+  "name": "message-receiver-demo",
+  "label": "Message Receiver",
+  "type": "widget",
+  "version": "1.0.0",
+  "exbVersion": "1.6.0",
+  "author": "John Cartwright",
+  "description": "listen for any of the built-in MessageTypes",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "messageActions": [
+    {
+      "name": "message-receiver",
+      "label": "Message Receiver",
+      "uri": "actions/message-receiver-action",
+      "settingUri": "actions/message-receiver-action-setting"
+    }
+  ],
+  "properties": {},
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 200,
+    "height": 200
+  }
+}

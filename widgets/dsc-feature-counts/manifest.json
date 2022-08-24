@@ -1,0 +1,28 @@
+{
+  "name": "dsc-feature-counts",
+  "label": "Sample Counts",
+  "type": "widget",
+  "dependency": "jimu-arcgis",
+  "version": "2.0.0",
+  "exbVersion": "1.6.0",
+  "author": "John Cartwright",
+  "description": "Displays sample counts within the current map extent",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "messageActions": [
+    {
+      "name": "filter-change",
+      "label": "Filter Change",
+      "uri": "actions/filter-change-action",
+      "settingUri": "actions/filter-change-action-setting"
+    }
+  ],
+  "properties": {},
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 400,
+    "height": 400
+  }
+}
