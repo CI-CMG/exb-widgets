@@ -1,6 +1,7 @@
 {
   "name": "subscriber-demo",
   "label": "Subscriber Demo",
+  "dependency": "jimu-arcgis",
   "type": "widget",
   "version": "1.0.0",
   "exbVersion": "1.9.0",
