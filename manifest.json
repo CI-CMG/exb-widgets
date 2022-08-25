@@ -1,0 +1,7 @@
+{
+    "name": "exb-widgets",
+    "type": "exb-web-extension-repo",
+    "description": "Custom widgets for the developer edition of ArcGIS Experience Builder.",
+    "copyright": "CIRES, University of Colorado",
+    "license": "http://www.apache.org/licenses/LICENSE-2.0"
+}

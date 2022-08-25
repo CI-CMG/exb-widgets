@@ -1,0 +1,22 @@
+{
+  "name": "scientific-name-autocomplete",
+  "label": "Scientific Name Selection",
+  "type": "widget",
+  "version": "1.0.0",
+  "exbVersion": "1.9.0",
+  "author": "John Cartwright",
+  "description": "select the scientific name from values in DataSource using MUI autocomplete widget",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "publishMessages": [
+    "DATA_SOURCE_FILTER_CHANGE"
+  ],
+  "translatedLocales": [
+    "en"
+  ],
+  "defaultSize": {
+    "width": 400,
+    "height": 400
+  }
+}
